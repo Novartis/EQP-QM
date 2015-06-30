@@ -1,0 +1,13 @@
+#!/bin/tcsh -f
+
+set DLAB_DIR="/dlab/ldrive/PHCHBS-I21605/s_deepseq"
+set CLASS_DIR="$DLAB_DIR/projects/exons/java/classes"
+
+set EXE=`basename $1 .class`
+shift
+
+setenv CLASSPATH "${CLASSPATH}:${CLASS_DIR}"
+
+#echo $CLASSPATH
+
+java -oss8M -ss8M -ms20G -mx20G -cp ${CLASSPATH} $EXE $*
