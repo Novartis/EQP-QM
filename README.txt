@@ -61,17 +61,18 @@ memory.
 
 3. eqp-quantify.sh options
 
-Usage: eqp-quantify.sh <options> <output dir> <SAM/BAM file>
+Usage: eqp-quantify.sh <options> -d <setup dir> <output dir> <SAM/BAM file>
 
 where <options> is
-   [-d <setup dir>] [-g] [-e] [-j] [-E <exon overlap>] [-J <junction overlap>]
+   [-g] [-e] [-j] [-E <exon overlap>] [-J <junction overlap>]
    [-W <min read weight>] [-s <direction>] [-o <output prefix>]
    [--nosort] [--unambig] [--unweighted] [-w <weight file>]
 
 output dir: directory used for the count files
 BAM file: the file containing the alignments of the
      reads against the genome with the aligner.
- -d STRING: Use STRING as the directory that contains the auxilliary files
+ -d STRING: Use STRING as the directory that contains the auxilliary
+   files (needs to be supplied)
  -g: compute gene counts
  -e: compute exon counts
  -j: compute junction counts
