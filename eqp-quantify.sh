@@ -1,5 +1,18 @@
 #!/bin/sh
 
+## Copyright 2015 Novartis Institutes for BioMedical Research
+## Inc.Licensed under the Apache License, Version 2.0 (the "License"); you
+## may not use this file except in compliance with the License. You may
+## obtain a copy of the License at
+##
+## http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing,
+## software distributed under the License is distributed on an "AS IS"
+## BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+## implied. See the License for the specific language governing
+## permissions and limitations under the License. 
+
 #$ -cwd
 #$ -j y
 #$ -S /bin/sh
@@ -143,6 +156,113 @@ echoVerbose ()
     echo $1
   fi
 }
+
+
+################################################################################
+##
+## Check version
+##
+################################################################################
+
+checkVersion ()
+{
+  TOOL_NAME="$1"
+  VERSION1="$2"
+  VERSION2="$3"
+
+  VERSION1_FORMAT=`echo $VERSION1 | sed -e 's/^\([0-9][0-9]*\)[.]\([0-9][0-9]*\)[.]\([0-9][0-9]*\).*/okay/'`
+  if [ "$VERSION1_FORMAT" != "okay" ]
+  then
+    echo "Version format: $VERSION1 for $TOOL_NAME not recognized."
+    exit 1
+  fi
+  VERSION2_FORMAT=`echo $VERSION2 | sed -e 's/^\([0-9][0-9]*\)[.]\([0-9][0-9]*\)[.]\([0-9][0-9]*\).*/okay/'`
+  if [ "$VERSION2_FORMAT" != "okay" ]
+  then
+    echo "Version format: $VERSION2 for $TOOL_NAME not recognized."
+    exit 1
+  fi
+
+  VERSION1_FIRST=`echo $VERSION1 | sed -e 's/^\([0-9]*\).*/\1/'`
+  VERSION2_FIRST=`echo $VERSION2 | sed -e 's/^\([0-9]*\).*/\1/'`
+
+  ## echo "VERSION1_FIRST: $VERSION1_FIRST, VERSION2_FIRST: $VERSION2_FIRST"
+
+  if [ "$VERSION1_FIRST" = "" -o "$VERSION1_FIRST" -lt "$VERSION2_FIRST" ]
+  then
+    echo "Please use $TOOL_NAME version >= $VERSION2. Found version: $VERSION1 ... exiting"
+    exit 1
+  fi
+  
+  if [ "$VERSION1_FIRST" -gt "$VERSION2_FIRST" ]
+  then
+    return
+  fi
+  
+  VERSION1_SECOND=`echo $VERSION1 | sed -e 's/^\([0-9]*\)[.]\([0-9]*\).*/\2/'`
+  VERSION2_SECOND=`echo $VERSION2 | sed -e 's/^\([0-9]*\)[.]\([0-9]*\).*/\2/'`
+
+  ## echo "VERSION1_SECOND: $VERSION1_SECOND, VERSION2_SECOND: $VERSION2_SECOND"
+  
+  if [ "$VERSION1_SECOND" = "" -o "$VERSION1_SECOND" -lt "$VERSION2_SECOND" ]
+  then
+    echo "Please use $TOOL_NAME version >= $VERSION2. Found version: $VERSION1 ... exiting"
+    exit 1
+  fi
+
+  if [ "$VERSION2_SECOND" -gt "$VERSION1_SECOND" ]
+  then
+    return
+  fi
+
+  VERSION1_THIRD=`echo $VERSION1 | sed -e 's/^\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\).*/\3/'`
+  VERSION2_THIRD=`echo $VERSION2 | sed -e 's/^\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\).*/\3/'`
+
+  if [ "$VERSION1_THIRD" = "" -o "$VERSION1_THIRD" -lt "$VERSION2_THIRD" ]
+  then
+    echo "Please use $TOOL_NAME version >= $VERSION2. Found version: $VERSION1 ... exiting"
+    exit 1
+  fi
+}
+
+################################################################################
+##
+## Check tool
+##
+################################################################################
+
+checkTool ()
+{
+  TOOL_DIR="$1"
+  TOOL_NAME="$2"
+  TOOL_VERSION="$3"
+  TOOL_EXE="$TOOL_DIR/$TOOL_NAME"
+  if [ ! -f $TOOL_EXE ]
+  then
+    TOOL_EXE=`which $TOOL_NAME 2>&1`
+    TOOL_EXE_COMMAND_NOT_FOUND=`echo $TOOL_EXE | sed -e 's/.*Command not found.$/Command not found./' | sed -e "s/^which: no $TOOL_NAME in .*/Command not found./"`
+    if [ "$TOOL_EXE_COMMAND_NOT_FOUND" = "Command not found." ]
+    then
+      echo "$TOOL_NAME not found in PATH. Please make sure that $TOOL_NAME (>=$TOOL_VERSION) is"
+      echo "available ... exiting"
+      exit 1
+    else
+      if [ "$TOOL_NAME" = "bedtools" ]
+      then
+        ACTUAL_TOOL_VERSION=`$TOOL_EXE --version | sed -e "s/$TOOL_NAME v*//"`
+      elif [ "$TOOL_NAME" = "samtools" ]
+      then
+        ACTUAL_TOOL_VERSION=`$TOOL_EXE 2>&1 | fgrep "Version:" | sed -e "s/Version: \([0-9]*[.][0-9]*[.][0-9]*\).*/\1/"`
+      else
+        echo "Cannot check tool $TOOL_NAME"
+	return
+      fi
+      ## echo "ACTUAL_TOOL_VERSION: $ACTUAL_TOOL_VERSION"
+      checkVersion $TOOL_NAME $ACTUAL_TOOL_VERSION $TOOL_VERSION
+    fi
+  fi
+}
+
 
 
 ################################################################################
@@ -596,12 +716,14 @@ then
 fi
 
 export TOOLS_DIR=$BIN_DIR/tools
-if [ ! -d $TOOLS_DIR ]
+if [ -d $TOOLS_DIR ]
 then
-  echo "Directory $TOOLS_DIR not found ... exiting"
-  exit 1
+  PATH="${TOOLS_DIR}:$PATH"
 fi
-PATH="${TOOLS_DIR}:$PATH"
+checkTool $TOOLS_DIR bedtools 2.24.0
+BEDTOOLS_EXE=$TOOL_EXE
+checkTool $TOOLS_DIR samtools 0.1.17
+SAMTOOLS_EXE=$TOOL_EXE
 
 
 PROJECT_BED_DIR=$PROJECT_DATA_DIR/bed-files
@@ -784,11 +906,11 @@ then
     fi
 
     echo "Converting file $SAM_FILE to a BAM file"
-    $CAT $SAM_FILE_PATH | $TOOLS_DIR/samtools view -Sb - > $BAM_FILE
+    $CAT $SAM_FILE_PATH | $SAMTOOLS_EXE view -Sb - > $BAM_FILE
 
     if [ $? -ne 0 ]
     then
-      echo "ERROR: Problem with $CAT $SAM_FILE_PATH | $TOOLS_DIR/samtools view -Sb - > $BAM_FILE ... exiting."
+      echo "ERROR: Problem with $CAT $SAM_FILE_PATH | $SAMTOOLS_EXE view -Sb - > $BAM_FILE ... exiting."
       exit 1
     fi
 
@@ -801,7 +923,7 @@ then
   if [ ! -f $SORTED_NAMES_BAM_FILE -o "$RECOMPUTE" = "TRUE" ]
   then
     echo "Sorting BAM file by name"
-    $TOOLS_DIR/samtools sort -n -m 8000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE
+    $SAMTOOLS_EXE sort -n -m 8000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE
 
     if [ $? -ne 0 ]
     then
@@ -818,7 +940,12 @@ then
 
 fi
 
-$TOOLS_DIR/samtools view -H $SAM_FILE_PATH | grep "^@SQ" | cut -f 2 | sed -e "s/^SN://" > $SAM_DIR/chromsomes.txt
+$SAMTOOLS_EXE view -H $SAM_FILE_PATH | grep "^@SQ" | cut -f 2 | sed -e "s/^SN://" > $SAM_DIR/chromsomes.txt
+if [ $? -ne 0 ]
+then
+  echo "ERROR: Problem with $SAMTOOLS_EXE view -H $SAM_FILE_PATH ... exiting."
+  exit 1
+fi
 
 NUM_CHROMOSOMES=`cat $SAM_DIR/chromsomes.txt | wc -l`
 if [ "$NUM_CHROMOSOMES" == 0 ]
@@ -865,8 +992,8 @@ then
   COMPUTE_READ_WEIGHT_JAVA_CMD="ComputeReadWeightsSam -o $WEIGHT_FILE"
   if [ "$IS_BAM_FILE" = "TRUE" ]
   then
-    echoVerbose "Command line call: $TOOLS_DIR/samtools view $SAM_FILE_PATH | $JAVA $COMPUTE_READ_WEIGHT_JAVA_CMD" >> $WEIGHT_DIR/${SAM_FILE_BASE}.log
-    $TOOLS_DIR/samtools view $SAM_FILE_PATH | $JAVA $COMPUTE_READ_WEIGHT_JAVA_CMD >> $WEIGHT_DIR/${SAM_FILE_BASE}.log 2>&1 &
+    echoVerbose "Command line call: $SAMTOOLS_EXE view $SAM_FILE_PATH | $JAVA $COMPUTE_READ_WEIGHT_JAVA_CMD" >> $WEIGHT_DIR/${SAM_FILE_BASE}.log
+    $SAMTOOLS_EXE view $SAM_FILE_PATH | $JAVA $COMPUTE_READ_WEIGHT_JAVA_CMD >> $WEIGHT_DIR/${SAM_FILE_BASE}.log 2>&1 &
     COMPUTE_READ_WEIGHT_PID=$!      
   else
     echoVerbose "Command line call: $JAVA $COMPUTE_READ_WEIGHT_JAVA_CMD -s $SAM_FILE_PATH" >> $WEIGHT_DIR/${SAM_FILE_BASE}.log
@@ -894,33 +1021,33 @@ EXON_BED_FILE_BASE=`basename $EXON_BED_FILE`
 
 if [ "$RECOMPUTE" = "TRUE" -o ! -f $INTERSECTION_BED_FILE_GZIP ]
 then
-  echoVerbose "Convert SAM/BAM file $SAM_FILE_BASE to a BED file and intersect with $EXON_BED_FILE_BASE"
+  echoVerbose "Convert SAM/BAM file $SAM_FILE_BASE to a BED file and intersect with $EXON_BED_FILE_BASE"  
   if [ "$IS_BAM_FILE" = "TRUE" ]
   then
-    echoVerbose "$TOOLS_DIR/samtools view $SAM_FILE_PATH | $JAVA ConvertSamBed | \
-       $TOOLS_DIR/bedtools intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE |  gzip > $INTERSECTION_BED_FILE_GZIP"
+    echoVerbose "$SAMTOOLS_EXE view $SAM_FILE_PATH | $JAVA ConvertSamBed | \
+       $BEDTOOLS_EXE intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE |  gzip > $INTERSECTION_BED_FILE_GZIP"
 
-    $TOOLS_DIR/samtools view $SAM_FILE_PATH | $JAVA ConvertSamBed $CONVERT_SAM_BED_STRAND_SPECIFIC_OPTION | \
-       $TOOLS_DIR/bedtools intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE |  gzip > $INTERSECTION_BED_FILE_GZIP
+    $SAMTOOLS_EXE view $SAM_FILE_PATH | $JAVA ConvertSamBed $CONVERT_SAM_BED_STRAND_SPECIFIC_OPTION | \
+       $BEDTOOLS_EXE intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE |  gzip > $INTERSECTION_BED_FILE_GZIP
   
     if [ $? -ne 0 ]
     then
       echo "ERROR: Problem with samtools view $SAM_FILE_PATH | $JAVA ConvertSamBed | \
-       $TOOLS_DIR/bedtools intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE |  gzip > $INTERSECTION_BED_FILE_GZIP ... exiting."
+       $BEDTOOLS_EXE intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE |  gzip > $INTERSECTION_BED_FILE_GZIP ... exiting."
       rm -f $INTERSECTION_BED_FILE_GZIP
       exit 1
     fi
   else
     echoVerbose "Command:"
     echoVerbose "ConvertSamBed -s $SAM_FILE_PATH | \ "
-    echoVerbose "  $TOOLS_DIR/bedtools intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE | \ "
+    echoVerbose "  $BEDTOOLS_EXE intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE | \ "
     echoVerbose "  gzip > $INTERSECTION_BED_FILE_GZIP"
     $JAVA ConvertSamBed $CONVERT_SAM_BED_STRAND_SPECIFIC_OPTION -s $SAM_FILE_PATH | \
-       $TOOLS_DIR/bedtools intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE | gzip > $INTERSECTION_BED_FILE_GZIP
+       $BEDTOOLS_EXE intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE | gzip > $INTERSECTION_BED_FILE_GZIP
     if [ $? -ne 0 ]
     then
       echo "ERROR: Problem with ConvertSamBed -s $SAM_FILE_PATH | \
-       $TOOLS_DIR/bedtools intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE | gzip > $INTERSECTION_BED_FILE_GZIP ... exiting."
+       $BEDTOOLS_EXE intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE | gzip > $INTERSECTION_BED_FILE_GZIP ... exiting."
       rm -f $INTERSECTION_BED_FILE_GZIP
       exit 1
     fi
@@ -1105,11 +1232,11 @@ then
 
   if [ "$IS_BAM_FILE" = "TRUE" ]
   then
-    echoVerbose "$TOOLS_DIR/samtools view $SAM_FILE_PATH | $EXTRACT_EXON_EXON_CMD"
-    $TOOLS_DIR/samtools view $SAM_FILE_PATH | $JAVA $EXTRACT_EXON_EXON_CMD
+    echoVerbose "$SAMTOOLS_EXE view $SAM_FILE_PATH | $EXTRACT_EXON_EXON_CMD"
+    $SAMTOOLS_EXE view $SAM_FILE_PATH | $JAVA $EXTRACT_EXON_EXON_CMD
     if [ $? -ne 0 ]
     then
-      echo "Command $TOOLS_DIR/samtools view $SAM_FILE_PATH | $EXTRACT_EXON_EXON_CMD failed ... exiting."
+      echo "Command $SAMTOOLS_EXE view $SAM_FILE_PATH | $EXTRACT_EXON_EXON_CMD failed ... exiting."
       exit 1
     fi
   else
