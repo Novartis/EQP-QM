@@ -1107,11 +1107,11 @@ public class SamRecord implements Comparable<SamRecord> {
 
     String queryName = getQueryName ();
 
-    int flag = (isPairedInSequencing ()?1:0) + 4 + (hasMate()?(mateIsMapped?0:8):0) + (isFirstRead ()?64:0) +  + (isSecondRead ()?128:0);
+    int flag = (isPairedInSequencing ()?1:0) + 4 + (hasMate()?(mateIsMapped?0:8):8) + (isFirstRead ()?64:0) +  + (isSecondRead ()?128:0);
 
     queryName = UtilLib.modifyFragmentId (queryName);
     
-    return (queryName + "\t" + flag + "\t" + "*" + "\t" + 0 + "\t" + 255 + "\t" + "*" + "\t" +
+    return (queryName + "\t" + flag + "\t" + "*" + "\t" + 0 + "\t" + 0 + "\t" + "*" + "\t" +
 	    "*" + "\t" + 0 + "\t" + 0 + "\t" + getSequence () + "\t" + getQualityString ());
   }
 

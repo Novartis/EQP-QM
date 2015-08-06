@@ -145,7 +145,7 @@ waitPid ()
 
 ################################################################################
 ##
-## wait for sub process to finish
+## Output if VERBOSE is TRUE
 ##
 ################################################################################
 
@@ -154,6 +154,14 @@ echoVerbose ()
   if [ "$VERBOSE" = "TRUE" ]
   then
     echo $1
+  fi
+}
+
+dateVerbose ()
+{
+  if [ "$VERBOSE" = "TRUE" ]
+  then
+    date
   fi
 }
 
@@ -653,7 +661,6 @@ then
   echo "Using directory $OUTPUT_PREFIX for intermediate results"
   if [ ! -d "$OUTPUT_PREFIX" ]
   then
-    echo "Making directory $OUTPUT_PREFIX"
     mkdir -p $OUTPUT_PREFIX
   fi
 fi
@@ -869,7 +876,7 @@ then
   fi
 fi
 
-date
+dateVerbose
 
 
 ################################################################################
@@ -932,7 +939,7 @@ then
     fi
 
     echoVerbose "Done"
-    date
+    dateVerbose
   fi
 
   SAM_FILE_PATH=$SORTED_NAMES_BAM_FILE.bam
@@ -988,7 +995,7 @@ fi
 
 if [ "$RECOMPUTE" = "TRUE" -o ! -f $WEIGHT_FILE ]
 then
-  echoVerbose "Computing read weights" > $WEIGHT_DIR/${SAM_FILE_BASE}.log
+  echo "Computing read weights" > $WEIGHT_DIR/${SAM_FILE_BASE}.log
   COMPUTE_READ_WEIGHT_JAVA_CMD="ComputeReadWeightsSam -o $WEIGHT_FILE"
   if [ "$IS_BAM_FILE" = "TRUE" ]
   then
@@ -1000,7 +1007,7 @@ then
     $JAVA $COMPUTE_READ_WEIGHT_JAVA_CMD -s $SAM_FILE_PATH >> $WEIGHT_DIR/${SAM_FILE_BASE}.log 2>&1 &
     COMPUTE_READ_WEIGHT_PID=$!  
   fi
-  date
+  dateVerbose
 fi
 
 WEIGHT_OPTION="-w $WEIGHT_FILE -W $READ_WEIGHT_THRESHOLD"
@@ -1021,9 +1028,13 @@ EXON_BED_FILE_BASE=`basename $EXON_BED_FILE`
 
 if [ "$RECOMPUTE" = "TRUE" -o ! -f $INTERSECTION_BED_FILE_GZIP ]
 then
-  echoVerbose "Convert SAM/BAM file $SAM_FILE_BASE to a BED file and intersect with $EXON_BED_FILE_BASE"  
+  echo "Converting SAM/BAM file:"
+  echo $SAM_FILE_BASE
+  echo "to a BED file and intersecting it with file:"
+  echo $EXON_BED_FILE_BASE
   if [ "$IS_BAM_FILE" = "TRUE" ]
   then
+    echoVerbose "Command:"
     echoVerbose "$SAMTOOLS_EXE view $SAM_FILE_PATH | $JAVA ConvertSamBed | \
        $BEDTOOLS_EXE intersect -wo $BED_STRAND_SPECIFIC_OPTION -a stdin -b $EXON_BED_FILE |  gzip > $INTERSECTION_BED_FILE_GZIP"
 
@@ -1053,7 +1064,7 @@ then
     fi
   fi
 fi
-date
+dateVerbose
 
 
 ################################################################################
@@ -1108,7 +1119,9 @@ then
     GENE_COUNT_OPTION="-e -O 1"
   fi
 
-  echoVerbose "Computing gene counts with read weight threshold $READ_WEIGHT_THRESHOLD and weight file $WEIGHT_FILE"
+  echo "Computing gene counts"
+  echoVerbose "Read weight threshold: $READ_WEIGHT_THRESHOLD"
+  echoVerbose "Weight file: $WEIGHT_FILE"
   GENE_COUNT_JAVA_CMD="ComputeCounts $GENE_COUNT_OPTION $WEIGHT_OPTION $COUNT_STRAND_SPECIFIC_OPTION $UNAMBIGUOUS_OPTION \
          $CONTAINMENT_OPTION $NONSPLICE_CONFORMING_OPTION -m $EXON_GENE_MAP_FILE -b - -o $GENE_COUNT_FILE"
   echoVerbose "Java cmd: $GENE_COUNT_JAVA_CMD"
@@ -1134,7 +1147,7 @@ fi
 if [ "$COMPUTE_EXON_COUNT" = "TRUE" ]
 then
 
-  echoVerbose "Computing exon counts with minimum overlap $EXON_OVERLAP" > $COUNT_DIR/genomic-exon-count.log
+  echo "Computing exon counts with minimum overlap $EXON_OVERLAP" > $COUNT_DIR/genomic-exon-count.log
   EXON_COUNT_JAVA_CMD="ComputeCounts -e $WEIGHT_OPTION $COUNT_STRAND_SPECIFIC_OPTION $NONSPLICE_CONFORMING_OPTION $UNAMBIGUOUS_OPTION \
       -O $EXON_OVERLAP -m $EXON_EXON_MAP_FILE -b - -o $EXON_COUNT_FILE"
   echoVerbose "$EXON_COUNT_JAVA_CMD" >> $COUNT_DIR/genomic-exon-count.log
@@ -1168,7 +1181,7 @@ then
     rm $COUNT_DIR/num-expressed-reads.txt
   fi
   
-  date
+  dateVerbose
 fi
 
 
@@ -1225,7 +1238,7 @@ fi
 if [ "$COMPUTE_JUNCTION_COUNT" = "TRUE" ]
 then
 
-  date
+  dateVerbose
   echoVerbose "Extracting the exon-exon pairs which border the gaps (introns) of spliced reads"
   FILTERED_EXON_EXON_FILE="$SAM_DIR/${SAM_FILE_BASE}-exon-exon.jnc"
   EXTRACT_EXON_EXON_CMD="ExtractSplicedExonExonIds -g $GTF_FILE -s - -o $FILTERED_EXON_EXON_FILE"
@@ -1249,7 +1262,7 @@ then
     fi
   fi
 
-  date
+  dateVerbose
   echoVerbose "Filter the junction exon map file"
   FILTERED_JUNCTION_EXON_MAP_FILE="$SAM_DIR/${SAM_FILE_BASE}_junction_exon.map"
   $BIN_DIR/bin/util-lib/filterFile.py -f $FILTERED_EXON_EXON_FILE -F "0:1" -i $JUNCTION_EXON_MAP_FILE -I "1:2" -o $FILTERED_JUNCTION_EXON_MAP_FILE
@@ -1260,7 +1273,7 @@ then
     exit 1
   fi
 
-  date
+  dateVerbose
   echoVerbose "Filter the exon junction map file"
   FILTERED_EXON_JUNCTION_MAP_FILE="$SAM_DIR/${SAM_FILE_BASE}_exon_junction.map"
   $BIN_DIR/bin/util-lib/filterFile.py -f $FILTERED_JUNCTION_EXON_MAP_FILE -i $EXON_JUNCTION_MAP_FILE -I "1" -o $FILTERED_EXON_JUNCTION_MAP_FILE
@@ -1271,12 +1284,12 @@ then
     exit 1
   fi
 
-  date
+  dateVerbose
   ## Scale up the memory requirements of Java
   JAVA="java -oss8M -ss8M -ms8G -mx8G -cp ${JAVA_CLASS_DIR}"
   echoVerbose "JAVA=$JAVA"
 
-  echoVerbose "Computing junction counts with minimum overlap $JUNCTION_OVERLAP"
+  echo "Computing junction counts with minimum overlap $JUNCTION_OVERLAP"
   JUNCTION_COUNT_JAVA_CMD="ComputeCounts -j $NON_ZERO_JUNCTION_COUNT_OPTION $WEIGHT_OPTION -m $FILTERED_EXON_JUNCTION_MAP_FILE \
      -O $JUNCTION_OVERLAP $NONSPLICE_CONFORMING_OPTION -b - -o $JUNCTION_COUNT_FILE  $COUNT_STRAND_SPECIFIC_OPTION"
   
@@ -1336,6 +1349,6 @@ then
   fi
 fi
 
-date
+dateVerbose
 echo "Compute genomic counts successfully completed."
 exit $EXIT_STATUS

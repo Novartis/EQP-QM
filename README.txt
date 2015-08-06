@@ -1,6 +1,10 @@
+EQP-QM is a RNA-seq quantification module which uses SAM/BAM genome
+alignment files as input and creates gene, exon, and junctions counts.
+
+
 1. Installation of EQP-QM
 
-For the installation of EQP-QM you just need to copy the files and directories
+For the installation of EQP-QM just copy the files and directories
 in this directory into a directory that is contained in your PATH
 environment variable (or add this directory to your PATH). Please note
 that the relative directory structure of this directory must be
@@ -8,11 +12,14 @@ maintained as the shell scripts eqp-setup.sh and eqp-quantify.sh assume
 that auxilliary scripts and java programs are located at certain paths
 relative to their location.
 
-Caveat: The subdirectory "tools" contains two executables (bedtools and
-samtools) which may not run on your architecture. Should this be the
-case please download the bedtools and samtools packages and copy the
-executables into the "tools" subdirectory. bedtools should be version
-2.2.24 or higher and samtools version 0.1.17 or higher.
+
+2. Dependencies
+
+- Python (>= version 2.6.5, imported libraries: copy, gettext, gzip,
+  numpy, os, re, sets, sys, textwrap, warnings)
+- Java (>= version 1.6)
+- samtools (>= version 0.1.17)
+- bedtools (>= version 2.24.0)
 
 
 2. Running EQP-QM
@@ -38,9 +45,9 @@ it is necessary to execute two preparation steps:
 
     GTF file
     The GTF file needs to contain a "gene_id" field. Note that the
-    standard GTF file provided by UCSC contains the transcript id as the
-    gene_id. EQP-QM will generate counts for the transcripts in this
-    case, however, these cannot be considered as transcript abundance
+    standard GTF file provided by UCSC contains the transcript id in the
+    "gene_id" field. EQP-QM will generate counts for the transcripts in
+    this case, however, these cannot be considered as transcript abundance
     estimates; in particular, one read can contribute to many
     transcripts. Ensembl GTF files work without problems.
 
@@ -55,7 +62,7 @@ Once eqp-setup.sh finishes, EQP-QM can be invoked on a SAM/BAM file via:
    eqp-quantify.sh -d <data directory> <output directory> <SAM/BAM file>
 
 The run time depends on the number of reads in the SAM/BAM file. Expect
-~30min for ~10M paired-end reads. EQP-QM needs at least 10GB main
+~30min-1h for ~10M paired-end reads. EQP-QM needs at least 10GB main
 memory.
 
 
