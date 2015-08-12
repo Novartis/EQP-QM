@@ -25,15 +25,13 @@ relative to their location.
 2. Running EQP-QM
 
 In order to be able to use EQP-QM to quantify genes, exons, and junctions
-it is necessary to execute two preparation steps:
+it is necessary to execute two preparatory steps:
 
- a. First the Fastq files need to be aligned against the reference
-    genome using a (splice-aware) aligner of your choice (e.g. HiSAT,
-    STAR, or Tophat2) to create SAM/BAM files
- b. Secondly, a number of annotation files needed by EQP-QM need to be
-    created. This is achieved by running eqp-setup.sh on a GTF file
-    which contains the genome annotation for the genome that was used
-    for the alignment of the Fastq files in the following way:
+ 1. First a number of annotation files required by EQP-QM need to be
+    created. This is achieved by running the script eqp-setup.sh on a GTF
+    file which contains the genome annotation for the genome that will be
+    used to align the sample Fastq files. eqp-setup.sh is called as
+    follows:
 
     eqp-setup.sh <GTF file> <data directory>
 
@@ -44,25 +42,43 @@ it is necessary to execute two preparation steps:
     annotation.
 
     GTF file
-    The GTF file needs to contain a "gene_id" field. Note that the
-    standard GTF file provided by UCSC contains the transcript id in the
-    "gene_id" field. EQP-QM will generate counts for the transcripts in
-    this case, however, these cannot be considered as transcript abundance
-    estimates; in particular, one read can contribute to many
+    Only entries with feature type "exon" which contain a "gene_id" field
+    are used by eqp-setup.sh (and, thus, for the quantification of genes,
+    exons, and junctions).
+
+    Caveat: Note that the standard GTF file provided by UCSC contains the
+    transcript id in the "gene_id" field (which equals the "transcript_id"
+    field). In this case EQP-QM will generate counts for the transcripts;
+    however, please note that these cannot be considered as transcript
+    abundance estimates; in particular, one read can contribute to many
     transcripts. Ensembl GTF files work without problems.
+
+ 2. Secondly the Fastq files need to be aligned against the chosen
+    reference genome using a (splice-aware) aligner of your choice (e.g.
+    HiSAT, STAR, or Tophat2) to create SAM/BAM files.
 
     Caveat: Please note that the chromosome names for NCBI/UCSC are
     different from the chromosome names used by Ensembl. So it is not
     possible to use a genome downloaded from NCBI/UCSC for alignment and
-    an Ensembl GTF to provide the genome annotation.
+    an Ensembl GTF file for the genome annotation. In general, please
+    make sure that the identifiers in the genome Fasta file and the GTF
+    file are consistent.
 
-    
-Once eqp-setup.sh finishes, EQP-QM can be invoked on a SAM/BAM file via:
+Note that the above two steps are independent of each other and can be
+executed in parallel.
+
+Once the alignment and the setup of EQP-QM are finished, the quantification
+step can be invoked on a SAM/BAM file via:
 
    eqp-quantify.sh -d <data directory> <output directory> <SAM/BAM file>
 
+This will create the files <SAM/BAM file base>-gene.cnt,
+<SAM/BAM file base>-gene.cnt, and <SAM/BAM file base>-junction.cnt in
+the directory <output directory> if <SAM/BAM file base> is the basename
+of <SAM/BAM file> without extension .sam or .bam.
+
 The run time depends on the number of reads in the SAM/BAM file. Expect
-~30min-1h for ~10M paired-end reads. EQP-QM needs at least 10GB main
+~0.5-1h for ~10M paired-end reads. EQP-QM needs at least 10GB of main
 memory.
 
 

@@ -649,7 +649,7 @@ then
   ## Check if we are calling compute-genomic-counts.sh with the standard directory structure
   if [ "${SAM_DIR#$PROJECT_DIR/*/C[0-9][0-9][0-9]/sam-files}" != "" ]
   then
-    OUTPUT_PREFIX="$PROJECT_DIR/.$SAM_FILE_BASE"
+    OUTPUT_PREFIX="$PROJECT_DIR/$SAM_FILE_BASE"
     SAM_DIR="$OUTPUT_PREFIX/sam-files"
   fi
 else
@@ -659,10 +659,11 @@ fi
 if [ "$OUTPUT_PREFIX" != "" ]
 then
   echo "Using directory $OUTPUT_PREFIX for intermediate results"
-  if [ ! -d "$OUTPUT_PREFIX" ]
+  if [ -d "$OUTPUT_PREFIX" ]
   then
-    mkdir -p $OUTPUT_PREFIX
+    rm -r $OUTPUT_PREFIX
   fi
+  mkdir -p $OUTPUT_PREFIX
 fi
 
 if [ ! -d $SAM_DIR ]
@@ -892,40 +893,40 @@ then
   IS_BAM_FILE="TRUE"
 fi
 
+BAM_FILE_BASE=`basename $BAM_FILE`
+if [ "$IS_BAM_FILE" = "FALSE" ]
+then
+  ## Create BAM files in $SAM_DIR (which may be in $OUTPUT_PREFIX)
+  BAM_FILE=$SAM_DIR/$BAM_FILE_BASE
+
+  if [ "$SAM_FILE_EXT" = "sam.gz" ]
+  then
+    CAT="zcat"
+  elif [ "$SAM_FILE_EXT" = "sam" ]
+  then
+    CAT="cat"
+  else
+    echo "Unknown extension $SAM_FILE_EXT for SAM file $SAM_FILE_PATH ... exiting"
+    exit 1
+  fi
+
+  echo "Converting file $SAM_FILE to a BAM file"
+  $CAT $SAM_FILE_PATH | $SAMTOOLS_EXE view -Sb - > $BAM_FILE
+
+  if [ $? -ne 0 ]
+  then
+    echo "ERROR: Problem with $CAT $SAM_FILE_PATH | $SAMTOOLS_EXE view -Sb - > $BAM_FILE ... exiting."
+    exit 1
+  fi
+  echo "Conversion completed"
+
+  TEMP_FILES="$BAM_FILE"
+  IS_BAM_FILE="TRUE"
+fi
+
 if [ "$SORT_BAM_FILE" = "TRUE" ]
 then
   
-  BAM_FILE_BASE=`basename $BAM_FILE`
-  if [ "$IS_BAM_FILE" = "FALSE" ]
-  then
-    ## Create BAM files in $SAM_DIR (which may be in $OUTPUT_PREFIX)
-    BAM_FILE=$SAM_DIR/$BAM_FILE_BASE
-
-    if [ "$SAM_FILE_EXT" = "sam.gz" ]
-    then
-      CAT="zcat"
-    elif [ "$SAM_FILE_EXT" = "sam.gz" ]
-    then
-      CAT="cat"
-    else
-      echo "Unknown extension $SAM_FILE_EXT for SAM file $SAM_FILE_PATH ... exiting"
-      exit 1
-    fi
-
-    echo "Converting file $SAM_FILE to a BAM file"
-    $CAT $SAM_FILE_PATH | $SAMTOOLS_EXE view -Sb - > $BAM_FILE
-
-    if [ $? -ne 0 ]
-    then
-      echo "ERROR: Problem with $CAT $SAM_FILE_PATH | $SAMTOOLS_EXE view -Sb - > $BAM_FILE ... exiting."
-      exit 1
-    fi
-
-    TEMP_FILES="$BAM_FILE"
-  fi
-
-  IS_BAM_FILE="TRUE"
-
   SORTED_NAMES_BAM_FILE=`echo $SAM_DIR/$BAM_FILE_BASE | sed -e 's/[.]bam$/_sorted_names/'`
   if [ ! -f $SORTED_NAMES_BAM_FILE -o "$RECOMPUTE" = "TRUE" ]
   then
@@ -944,7 +945,8 @@ then
 
   SAM_FILE_PATH=$SORTED_NAMES_BAM_FILE.bam
   TEMP_FILES="$TEMP_FILES $SORTED_NAMES_BAM_FILE.bam"
-
+else
+  SAM_FILE_PATH=$BAM_FILE
 fi
 
 $SAMTOOLS_EXE view -H $SAM_FILE_PATH | grep "^@SQ" | cut -f 2 | sed -e "s/^SN://" > $SAM_DIR/chromsomes.txt
