@@ -21,7 +21,7 @@
 PROG_NAME=`basename $0`
 PROG_DIR=`dirname $0`
 PROG_DIR=`cd "$PROG_DIR" && pwd`
-VERSION=2.0
+VERSION=1.0.0
 
 ## Ensure that pipes report the exit status of the first failed job
 set -o pipefail
