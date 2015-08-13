@@ -196,7 +196,7 @@ fi
 ##
 ################################################################################
 
-cut -f 1 $GTF_FILE | sort -u > $PROJECT_GTF_DIR/$GENE_MODEL_PREFIX-chromosomes.txt
+cut -f 1 $GTF_FILE | sed -e 's/^/#/' | sed -e 's/$/#/' | sort -u > $PROJECT_GTF_DIR/$GENE_MODEL_PREFIX-chromosomes.txt
 if [ $? -ne 0 ]
 then
   echo "Problem with cut -f 1 $GTF_FILE | sort -u > $PROJECT_GTF_DIR/$GENE_MODEL_PREFIX-chromosomes.txt ... exiting."

@@ -949,7 +949,7 @@ else
   SAM_FILE_PATH=$BAM_FILE
 fi
 
-$SAMTOOLS_EXE view -H $SAM_FILE_PATH | grep "^@SQ" | cut -f 2 | sed -e "s/^SN://" > $SAM_DIR/chromsomes.txt
+$SAMTOOLS_EXE view -H $SAM_FILE_PATH | grep "^@SQ" | cut -f 2 | sed -e "s/^SN://" | sed -e 's/^/#/' | sed -e 's/$/#/' > $SAM_DIR/chromsomes.txt
 if [ $? -ne 0 ]
 then
   echo "ERROR: Problem with $SAMTOOLS_EXE view -H $SAM_FILE_PATH ... exiting."
@@ -976,9 +976,7 @@ else
     echo "WARNING: The chromosomes used for the alignment of the SAM file and the ones"
     echo "used in the setup of EQP have different identifiers. Alignments against the"
     echo "following chromosomes will not be considered:"
-    fgrep -v -f $PROJECT_GTF_DIR/${GENE_MODEL_PREFIX}-chromosomes.txt $SAM_DIR/chromsomes.txt
-    echo "NUM_CHROMOSOMES_IN_MISSED: $NUM_CHROMOSOMES_IN_MISSED, NUM_CHROMOSOMES: $NUM_CHROMOSOMES"
-    exit 1
+    fgrep -v -f $PROJECT_GTF_DIR/${GENE_MODEL_PREFIX}-chromosomes.txt $SAM_DIR/chromsomes.txt | sed -e 's/^#//'  | sed -e 's/#$//'
   fi
 fi
 
