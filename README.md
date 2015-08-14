@@ -32,7 +32,7 @@ it is necessary to execute two preparatory steps:
    used to align the sample Fastq files. `eqp-setup.sh` is called as
    follows:
 
-   > `eqp-setup.sh <GTF file> <data directory>`
+   `eqp-setup.sh <GTF file> <data directory>`
 
    Here `<data directory>` is the directory in which all necessary
    annotation files for EQP-QM are created. It needs to be supplied in
@@ -40,7 +40,7 @@ it is necessary to execute two preparatory steps:
    is only necessary to execute this step once for each genome
    annotation.
 
-   **GTF file**:  
+   **GTF file**:
    Only entries with feature type `exon` which contain a `gene_id` field
    are used by `eqp-setup.sh` (and, thus, for the quantification of genes,
    exons, and junctions).
@@ -69,7 +69,7 @@ executed in parallel.
 Once the alignment and the setup of EQP-QM are finished, the quantification
 step can be invoked on a SAM/BAM file via:
 
-> `eqp-quantify.sh -d <data directory> <output directory> <SAM/BAM file>`
+`eqp-quantify.sh -d <data directory> <output directory> <SAM/BAM file>`
 
 This will create the files `<SAM/BAM file base>`-gene.cnt,
 `<SAM/BAM file base>`-gene.cnt, and `<SAM/BAM file base>`-junction.cnt in
@@ -81,14 +81,42 @@ The run time depends on the number of reads in the SAM/BAM file. Expect
 memory.
 
 
+## Testing EQP-QM
+
+In order to test that the installation of EQP-QM worked correctly and all
+requirements are met, change to subdirectory `test-files` and call:  
+
+`run-test.sh`
+
+This will create reference files by calling `eqp-setup.sh` on the GTF-file:
+`test-files/gtf-files/Homo_sapiens.GRCh38.76-test.gtf`
+
+and then run `eqp-quantify.sh` on the BAM file:
+`test-files/sam-files/test-alignment-file.bam`
+
+Note that `eqp-setup.sh` and `eqp-quantify.sh` need to be contained in a directory
+which is included in your PATH environment variable and the subdirectories `bin`,
+`java`, and `util-scripts` need to be contained in the same directory as `eqp-setup.sh`
+and `eqp-quantify.sh`.
+
+This creates the three count files:
+`test-files/count-files/test-alignment-file-gene.cnt`
+`test-files/count-files/test-alignment-file-exon.cnt`
+`test-files/count-files/test-alignment-file-junction.cnt`
+
+which are then compared with the previously generated count files in the directory
+`comparison-files`. If the test is successful, then the message `Test successfully
+completed.` will be printed as the last line of the output.
+
+
 ## `eqp-quantify.sh` options
 
 Usage: `eqp-quantify.sh <options> -d <setup dir> <output dir> <SAM/BAM file>`
 
 where `<options>` is  
->  `[-g] [-e] [-j] [-E <exon overlap>] [-J <junction overlap>]
-   [-W <min read weight>] [-s <direction>] [-o <output prefix>]
-   [--nosort] [--unambig] [--unweighted] [-w <weight file>]`
+`[-g] [-e] [-j] [-E <exon overlap>] [-J <junction overlap>] [-W <min read weight>]`
+`[-s <direction>] [-o <output prefix>] [--nosort] [--unambig] [--unweighted]`
+`[-w <weight file>]`
 
 `output dir`: directory used for the count files
 `SAM/BAM file`: the file containing the alignments of the
@@ -115,3 +143,14 @@ where `<options>` is
    alignments  
 
 
+## License
+Copyright 2015 Novartis Institutes for Biomedical Research
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+`http://www.apache.org/licenses/LICENSE-2.0`
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+the specific language governing permissions and limitations under the License.
