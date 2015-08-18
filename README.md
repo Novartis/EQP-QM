@@ -10,7 +10,13 @@ obtained from unpacking the GitHub download into a directory that is contained
 in your `PATH` environment variable. Please note that the relative directory
 structure must be maintained as the shell scripts `eqp-setup.sh` and
 `eqp-quantify.sh` assume that auxilliary scripts and Java programs are
-located at certain paths relative to their location.
+located at certain paths relative to their location. So the content of
+the directory containing the two scripts `eqp-setup.sh` and
+`eqp-quantify.sh` should be:
+`LICENSE.txt  bin/              eqp-setup.sh   manual/      util-scripts/`
+`README.md    eqp-quantify.sh   java/          test-files/`  
+(where only `eqp-setup.sh`, `eqp-quantify.sh`, `bin`, `java`, and
+`util-scripts` are really relevant).
 
 
 ## Dependencies
@@ -37,8 +43,7 @@ it is necessary to execute two preparatory steps:
    Here `<data directory>` is the directory in which all necessary
    annotation files for EQP-QM are created. It needs to be supplied in
    the quantification step. The setup will take a while to complete but it
-   is only necessary to execute this step once for each genome
-   annotation.
+   is only necessary to execute this step once for each GTF file.
 
    **GTF file**:
    Only entries with feature type `exon` which contain a `gene_id` field
@@ -73,7 +78,7 @@ step can be invoked on a SAM/BAM file via:
 
 This will create the files `<SAM/BAM file base>`-gene.cnt,
 `<SAM/BAM file base>`-gene.cnt, and `<SAM/BAM file base>`-junction.cnt in
-the directory `<output directory>` if `<SAM/BAM file base>` is the basename
+the directory `<output directory>` where `<SAM/BAM file base>` is the basename
 of `<SAM/BAM file>` without extension `.sam` or `.bam`.
 
 The run time depends on the number of reads in the SAM/BAM file. Expect
@@ -89,8 +94,7 @@ requirements are met, change to subdirectory `test-files` and call:
 `run-test.sh`
 
 This will create reference files by calling `eqp-setup.sh` on the GTF-file:
-`test-files/gtf-files/Homo_sapiens.GRCh38.76-test.gtf`
-
+`test-files/gtf-files/Homo_sapiens.GRCh38.76-test.gtf`  
 and then run `eqp-quantify.sh` on the BAM file:
 `test-files/sam-files/test-alignment-file.bam`
 
@@ -123,14 +127,15 @@ where `<options>` is
    reads against the genome with the aligner.  
 `-d STRING`: Use STRING as the directory that contains the auxilliary
   files (needs to be supplied)  
-`-g`: compute gene counts  
-`-e`: compute exon counts  
-`-j`: compute junction counts  
+`-g`: compute gene counts [computed by default, without -g,-e,-j] 
+`-e`: compute exon counts [computed by default, without -g,-e,-j] 
+`-j`: compute junction counts [computed by default, without -g,-e,-j] 
 `-E INT`: Minimal overlap of a read with an exon [5]  
 `-J INT`: Minimal overlap of a read with both exons on a junction [8]  
 `-W FLOAT`: Minimal weight of a read; reads with a lower weight are
           disregarded [0.01]  
-`-s STRING`: process reads as strand-specific in direction STRING  
+`-s STRING`: process reads as strand-specific in direction STRING
+(*forward* for orientation fr or *backward* for orientation rf)  
 `-o STRING`: A directory STRING is created in the current working directory
     and all intermediate files are stored in a directory structure under
     this directory; furthermore, the count files are generated in the current
