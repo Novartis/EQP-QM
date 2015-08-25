@@ -218,7 +218,7 @@ checkVersion ()
     exit 1
   fi
 
-  if [ "$VERSION2_SECOND" -gt "$VERSION1_SECOND" ]
+  if [ "$VERSION1_SECOND" -gt "$VERSION2_SECOND" ]
   then
     return
   fi
