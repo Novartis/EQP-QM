@@ -5,7 +5,7 @@ Date: 13/01/2012
 
 Classes :   FastqEntry
 
-$Author: schuisv1 $
+$Author: Sven Schuierer $
 
 Copyright 2015 Novartis Institutes for BioMedical Research
 Inc.Licensed under the Apache License, Version 2.0 (the "License"); you

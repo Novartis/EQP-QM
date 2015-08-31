@@ -45,7 +45,6 @@ parser.add_argument('mapFile', metavar="STRING", help='File with internal exon i
 if len(sys.argv) > 1:
   args = parser.parse_args(sys.argv[1:])
 else:
-  projectDir = os.path.join("/dlab", "ldrive", "PHCHBS-I21605", "ref-files", "Laurent-chr22")
   inputArgs = []
   inputArgs.append("-b")
   inputArgs.append(os.path.join(projectDir, "chr22-genome-exon.bed"))

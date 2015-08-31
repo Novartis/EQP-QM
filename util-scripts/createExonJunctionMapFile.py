@@ -53,8 +53,6 @@ parser.add_argument('-w', dest="printWarnings", action='store_true', help='Flag 
 if len(sys.argv) > 1:
   args = parser.parse_args(sys.argv[1:])
 else:
-  exonPipelinePath = os.path.join("/dlab", "ldrive", "PHCHBS-I21605", "schuisv1", "ngs", "RNA-seq-test", "EQP2.0-speed-test", "exon-pipeline-files")
-  exonPipelinePath = os.path.join("/dlab", "ldrive", "PHCHBS-I21605", "EQP", "EQP2.0", "SEQC-benchmark-instance-new", "human")
   mapPath = os.path.join(exonPipelinePath, "map-files")
   
   geneModel = "ensembl"

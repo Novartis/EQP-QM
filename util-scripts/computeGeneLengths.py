@@ -64,10 +64,6 @@ else:
   # gene_model="ensembl"
   gene_model="refseq"
 
-  projectDir = os.path.join(os.environ["HOME"], "ngs", "RNA-seq", "2014", "LMSU", "exon-pipeline-files")
-  projectDir = os.path.join(os.environ["HOME"], "PHCHBS-I21605", "eqp", "NG00007.0-EQP1.0-UCSC")
-  projectDir = os.path.join(os.environ["HOME"], "PHCHBS-I21605", "eqp", "NG00007.0-EQP1.0-Ensembl")
-  projectDir = os.path.join("/dlab", "ldrive", "PHCHBS-I21605", "schuisv1", "ngs", "RNA-seq-test", "SEQC-benchmark-EQP2.0", "exon-pipeline-files")
   
   inputArgs = []
   inputArgs.append("-g")
