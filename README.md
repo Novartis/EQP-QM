@@ -1,9 +1,18 @@
-# Exon quantification pipeline - quantification module (EQP-QM)
+Exon quantification pipeline - quantification module (EQP-QM)
+=============================================================
+
 EQP-QM is a Unix based RNA-seq quantification module which uses SAM/BAM
 genome alignment files as input and creates gene, exon, and junctions counts.
 
 
-## Installation of EQP-QM
+Version
+-------
+
+This document corresponds to EQP-QM version 2.1.0
+
+
+Installation of EQP-QM
+----------------------
 
 For the installation of EQP-QM just copy the files and directories
 obtained from unpacking the GitHub download into a directory that is contained
@@ -19,15 +28,18 @@ the directory containing the two scripts `eqp-setup.sh` and
 `util-scripts` are really relevant).
 
 
-## Dependencies
+Dependencies
+------------
+
 * Python (>= version 2.6.5, imported libraries: copy, gettext, gzip,
-  numpy, os, re, sets, sys, textwrap, warnings)
+  numpy, os, re, sets, sys, textwrap, warnings, argparse)
 * Java (>= version 1.6)
 * samtools (>= version 0.1.17)
 * bedtools (>= version 2.24.0)
 
 
-## Running EQP-QM
+Running EQP-QM
+--------------
 
 In order to be able to use EQP-QM to quantify genes, exons, and junctions
 it is necessary to execute two preparatory steps:
@@ -86,7 +98,8 @@ The run time depends on the number of reads in the SAM/BAM file. Expect
 memory.
 
 
-## Testing EQP-QM
+Testing EQP-QM
+--------------
 
 In order to test that the installation of EQP-QM worked correctly and all
 requirements are met, change to subdirectory `test-files` and call:  
@@ -148,7 +161,9 @@ where `<options>` is
    alignments  
 
 
-## License
+License
+=======
+
 Copyright 2015 Novartis Institutes for Biomedical Research
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
