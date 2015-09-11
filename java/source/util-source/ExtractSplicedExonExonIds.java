@@ -284,8 +284,8 @@ public class ExtractSplicedExonExonIds {
     while (line != null) {
 	
       GtfEntry gtfEntry = new GtfEntry (line);
-      leftBoundarySet.put(gtfEntry.getReferenceName () + "/" + gtfEntry.getStart (), gtfEntry);
-      rightBoundarySet.put(gtfEntry.getReferenceName () + "/" +  gtfEntry.getEnd (), gtfEntry);
+      leftBoundarySet.putValue(gtfEntry.getReferenceName () + "/" + gtfEntry.getStart (), gtfEntry);
+      rightBoundarySet.putValue(gtfEntry.getReferenceName () + "/" +  gtfEntry.getEnd (), gtfEntry);
 	
       lineNumber++;
       if (lineNumber % gtfCountUnit == 0) {
@@ -457,20 +457,22 @@ public class ExtractSplicedExonExonIds {
 	    }
 	    if (localIntronCoordinates.size() > 0) {
 	      numSplicedSamRecords += 1;
-	      
-	      Integer numFragmentJunctions = splicedFragmentTable.get(fragmentName);
-	      if (numFragmentJunctions == null) {
-		if (weightFilename != "") {
-		  if (fragmentEntry.getNumAlignments () == 1) {
-		    numUniquelyMappingFragments += 1;
-		  } else {
-		    numMultiMappers += 1;
+
+	      if (quantify) {
+		Integer numFragmentJunctions = splicedFragmentTable.get(fragmentName);
+		if (numFragmentJunctions == null) {
+		  if (weightFilename != "") {
+		    if (fragmentEntry.getNumAlignments () == 1) {
+		      numUniquelyMappingFragments += 1;
+		    } else {
+		      numMultiMappers += 1;
+		    }
 		  }
+		  splicedFragmentTable.put(fragmentName, new Integer (1));
+		} else {
+		  splicedFragmentTable.put(fragmentName, new Integer (numFragmentJunctions.intValue () + 1));
 		}
-		splicedFragmentTable.put(fragmentName, new Integer (1));
-	      } else {
-		splicedFragmentTable.put(fragmentName, new Integer (numFragmentJunctions.intValue () + 1));
-	      }	    
+	      }
 
 	      /* A relative intron interval [I0, I1] corresponds to the genomic interval [position - 1 + I0, position - 1 + I1] since the relative
 		 intron intervals start with position 1, that is position corresponds to 1; for instance, [1,2] would correspond to [position, position + 1] */
@@ -497,8 +499,10 @@ public class ExtractSplicedExonExonIds {
 		  }
 		
 		  int numSplicedSamFragments = 0;
-		  for (String curFragmentName: splicedFragmentTable.keySet()) {
-		    numSplicedSamFragments += splicedFragmentTable.get(curFragmentName).intValue();
+		  if (quantify) {
+		    for (String curFragmentName: splicedFragmentTable.keySet()) {
+		      numSplicedSamFragments += splicedFragmentTable.get(curFragmentName).intValue();
+		    }
 		  }
 		  System.out.println((fragmentName.length()>36?fragmentName.substring(36):fragmentName) + "\t" + samRecord.getCiagrString() + "\t" +
 				     localIntronInterval[0] + "-" + localIntronInterval[1]);
@@ -546,7 +550,6 @@ public class ExtractSplicedExonExonIds {
     }
 
     System.err.println("Number of spliced SAM records: " + numSplicedSamRecords);
-    System.err.println("Number of spliced fragments: " + splicedFragmentTable.keySet().size());
     System.err.println("Number of read/junction pairs: " + numSamJunctions);
     System.err.println("Number of intron intervals: " + intronIntervals.size());
     System.err.println("Number of SAM records that cover the same junction as the other read of the fragment: " + duplicateCoverage);
@@ -556,6 +559,7 @@ public class ExtractSplicedExonExonIds {
     }
 
     if (quantify) {
+      System.err.println("Number of spliced fragments: " + splicedFragmentTable.keySet().size());
       int numIntronIntervalFragments = 0;
       for (Interval interval: intronIntervals) {
 	if (interval.getFragmentNameSet() == null) {
@@ -564,18 +568,19 @@ public class ExtractSplicedExonExonIds {
 	numIntronIntervalFragments += interval.getFragmentNameSet().size();
       }
       System.err.println("Number of fragment/junction pairs: " + numIntronIntervalFragments);
+      int numSplicedSamFragments = 0;
+      for (String curFragmentName: splicedFragmentTable.keySet()) {
+	numSplicedSamFragments += splicedFragmentTable.get(curFragmentName).intValue();
+      }
+      System.err.println("Sum of spliced SAM records per fragment: " + numSplicedSamFragments);
     }
 
-    int numSplicedSamFragments = 0;
-    for (String curFragmentName: splicedFragmentTable.keySet()) {
-      numSplicedSamFragments += splicedFragmentTable.get(curFragmentName).intValue();
-    }
-    System.err.println("Sum of spliced SAM records per fragment: " + numSplicedSamFragments);
     System.err.println("Soft clipped bases: " + softClippingLengthTotal);
-
     System.err.println();
+    if (quantify) {
+      System.err.println("NUM_SPLICED_FRAGMENTS=" + splicedFragmentTable.keySet().size());
+    }
     System.err.println("NUM_SPLICED_SAM_RECORDS=" + numSplicedSamRecords);
-    System.err.println("NUM_SPLICED_FRAGMENTS=" + splicedFragmentTable.keySet().size());
     System.err.println("NUM_INTRON_INTERVALS=" + intronIntervals.size());
     if (weightFilename != "") {
       System.err.println("NUM_UNIQUE_MAPPERS=" + numUniquelyMappingFragments);
@@ -692,8 +697,8 @@ public class ExtractSplicedExonExonIds {
 	String intronIntervalString = interval.getChromosome()  + ":" + interval.getStart() + "-" + interval.getEnd();
 	
 	// System.err.println(interval);
-	HashSet<GtfEntry> leftGtfEntrySet  = rightBoundarySet.get(interval.getChromosome() + "/" + (interval.getStart() - 1));	
-	HashSet<GtfEntry> rightGtfEntrySet = leftBoundarySet.get(interval.getChromosome()  + "/" + (interval.getEnd() + 1));
+	Set<GtfEntry> leftGtfEntrySet  = rightBoundarySet.get(interval.getChromosome() + "/" + (interval.getStart() - 1));	
+	Set<GtfEntry> rightGtfEntrySet = leftBoundarySet.get(interval.getChromosome()  + "/" + (interval.getEnd() + 1));
 
 	String additionalFieldsString = "";
 	if (quantify) {
