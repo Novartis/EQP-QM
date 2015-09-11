@@ -932,11 +932,11 @@ then
   if [ ! -f $SORTED_NAMES_BAM_FILE -o "$RECOMPUTE" = "TRUE" ]
   then
     echo "Sorting BAM file by name"
-    $SAMTOOLS_EXE sort -n -m 8000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE
+    $SAMTOOLS_EXE sort -n -m 5000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE
 
     if [ $? -ne 0 ]
     then
-      echo "ERROR: Problem with samtools sort -n -m 8000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE ... exiting."
+      echo "ERROR: Problem with samtools sort -n -m 5000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE ... exiting."
       exit 1
     fi
 
