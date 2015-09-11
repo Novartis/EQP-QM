@@ -61,20 +61,6 @@ public class HashSetTable<E, F> extends Hashtable<E, HashSet<F>> {
     return values;
     
   }
-  
-  /**********************************************************************************/
-  
-  public void put (E key, F value) {
-
-    HashSet<F> values = super.get(key);
-    if (values == null) {
-      values = new HashSet<F> ();
-      super.put(key, values);
-    }
-
-    values.add(value);
-    
-  }
 
   
   /**********************************************************************************/
