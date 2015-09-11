@@ -97,14 +97,17 @@ public class ComputeCounts {
    *
    ***********************************************************************************/
 
-  public static void addToTableEntry (Hashtable<String, Double>
-  entryTable, String key, double value) {
+  public static void addToTableEntry (Hashtable<String, Double> entryTable, String key, double value) {
 
-    Double tableValueDouble = entryTable.get(key); double tableValue =
-    0; if (tableValueDouble != null) { tableValue =
-    tableValueDouble.doubleValue(); }
+    Double tableValueDouble = entryTable.get(key);
+    double tableValue = 0;
+
+    if (tableValueDouble != null) {
+      tableValue = tableValueDouble.doubleValue();
+    }
 	    
-    tableValue = tableValue + value; entryTable.put(key, new Double(tableValue));
+    tableValue = tableValue + value;
+    entryTable.put(key, new Double(tableValue));
   }
 
 
