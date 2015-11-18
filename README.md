@@ -102,9 +102,9 @@ Testing EQP-QM
 --------------
 
 In order to test that the installation of EQP-QM worked correctly and all
-requirements are met, change to subdirectory `test-files` and call:  
+requirements are met, execute the script:  
 
-`run-test.sh`
+`test-files/run-test.sh`
 
 This will create reference files by calling `eqp-setup.sh` on the GTF-file:
 `test-files/gtf-files/Homo_sapiens.GRCh38.76-test.gtf`  
