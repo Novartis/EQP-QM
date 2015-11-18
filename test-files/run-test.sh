@@ -4,17 +4,22 @@ PROG_NAME=`basename $0`
 PROG_DIR=`dirname $0`
 PROG_DIR=`cd "$PROG_DIR" && pwd`
 
-PROJECT_DIR=`dirname $PROG_DIR`
-
 cd $PROG_DIR
 
-## Create reference files
+
+################################################################################
+##
+##  Run eqp-setup.sh
+##
+################################################################################
+
+## Create reference file directory
 if [ ! -d data-files ]
 then
   mkdir data-files
 fi
 
-EQP_SETUP_LOCATION=`which eqp-setup.sh  2>&1 | fgrep "which: no eqp-setup.sh"`
+EQP_SETUP_LOCATION=`which eqp-setup.sh  2>&1 | fgrep "which:"`
 if [ "$EQP_SETUP_LOCATION" != "" ]
 then
   echo "$EQP_SETUP_LOCATION"
@@ -22,6 +27,7 @@ then
   echo "included in your PATH environment variable ... exiting"
   exit 1
 fi
+
 eqp-setup.sh gtf-files/Homo_sapiens.GRCh38.76-test.gtf data-files
 if [ $? -ne 0 ]
 then
@@ -32,8 +38,13 @@ then
 fi
 
 
-## Create count files
-EQP_QUANTIFY_LOCATION=`which eqp-quantify.sh 2>&1 | fgrep "which: no eqp-quantify.sh"`
+################################################################################
+##
+##  Run eqp-quantify.sh
+##
+################################################################################
+
+EQP_QUANTIFY_LOCATION=`which eqp-quantify.sh 2>&1 | fgrep "which:"`
 if [ "$EQP_QUANTIFY_LOCATION" != "" ]
 then
   echo "$EQP_QUANTIFY_LOCATION"
@@ -41,6 +52,7 @@ then
   echo "included in your PATH environment variable ... exiting"
   exit 1
 fi
+
 eqp-quantify.sh -d data-files count-files sam-files/test-alignment-file.bam
 if [ $? -ne 0 ]
 then
@@ -48,6 +60,13 @@ then
   echo "eqp-quantify.sh failed ... exiting."
   exit 1
 fi
+
+
+################################################################################
+##
+##  Check if the count files are correct
+##
+################################################################################
 
 echo
 for FILE in test-alignment-file-gene test-alignment-file-exon test-alignment-file-junction
