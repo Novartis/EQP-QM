@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ## Copyright 2015 Novartis Institutes for BioMedical Research
 ## Inc.Licensed under the Apache License, Version 2.0 (the "License"); you
@@ -15,8 +15,8 @@
 
 #$ -cwd
 #$ -j y
-#$ -S /bin/sh
-#$ -V
+#$ -S /bin/bash
+#$ -v CLASSPATH,LD_LIBRARY_PATH,PATH,PYTHONPATH
 
 PROG_NAME=`basename $0`
 PROG_DIR=`dirname $0`
@@ -102,10 +102,20 @@ waitPid ()
   then
     if [ -f "$LOG_FILE" ]
     then
-      cat $LOG_FILE
+      if [ "$VERBOSE" = "TRUE" ]
+      then
+        cat $LOG_FILE
+      else
+        NUMBER_STATEMENT=`fgrep NUMBER $LOG_FILE`
+	if [ "$NUMBER_STATEMENT" != "" ]
+	then
+	  echo "$NUMBER_STATEMENT"
+	  echo
+	fi
+      fi
       rm  $LOG_FILE
     else
-      echoVerbose "WARNING: File $LOG_FILE not found."
+      echo "WARNING: File $LOG_FILE not found."
     fi
   fi
 
@@ -248,8 +258,10 @@ checkTool ()
   if [ ! -f $TOOL_EXE ]
   then
     TOOL_EXE=`which $TOOL_NAME 2>&1`
-    TOOL_EXE_COMMAND_NOT_FOUND=`echo $TOOL_EXE | sed -e 's/.*Command not found.$/Command not found./' | sed -e "s/^which: no $TOOL_NAME in .*/Command not found./"`
-    if [ "$TOOL_EXE_COMMAND_NOT_FOUND" = "Command not found." ]
+    TOOL_EXE_COMMAND_NOT_FOUND=`file $TOOL_EXE | tr '[A-Z]' '[a-z]' | sed -e 's/.*no such file or directory)$/command not found/' | \
+                                sed -e 's/.*command not found.*$/command not found/' | \
+				sed -e "s/^which: no $TOOL_NAME in .*/command not found/"`
+    if [ "$TOOL_EXE_COMMAND_NOT_FOUND" = "command not found" ]
     then
       echo "$TOOL_NAME not found in PATH. Please make sure that $TOOL_NAME (>=$TOOL_VERSION) is"
       echo "available ... exiting"
@@ -549,7 +561,7 @@ GENE_MODEL_PREFIX=
 SETUP_SCRIPT=$PROJECT_DIR/bin/setup.sh
 if [[ -x $SETUP_SCRIPT ]]
 then
-  source $SETUP_SCRIPT
+  . $SETUP_SCRIPT
   GENE_MODEL_PREFIX=$FILE_BASE
 elif [ -e $PROJECT_DIR/exon-pipeline-files ]
 then
@@ -768,7 +780,7 @@ echoVerbose "JAVA=$JAVA"
 
 ################################################################################
 ##
-##  Set gene exon files and BED file
+##  Set BED files and map files
 ##
 ################################################################################
 
@@ -828,12 +840,13 @@ fi
 ##
 ################################################################################
 
-echoVerbose "QUANTIFIER=EQP $VERSION"
-echoVerbose "READ_WEIGHT_THRESHOLD=$READ_WEIGHT_THRESHOLD"
-echoVerbose "EXON_OVERLAP=$EXON_OVERLAP"
-echoVerbose "JUNCTION_OVERLAP=$JUNCTION_OVERLAP"
-echoVerbose "STRAND_SPECIFIC=$STRAND_SPECIFIC"
-echoVerbose "STRAND_SPECIFIC_DIRECTION=$STRAND_SPECIFIC_DIRECTION"
+echo
+echo "QUANTIFIER=EQP $VERSION"
+echo "READ_WEIGHT_THRESHOLD=$READ_WEIGHT_THRESHOLD"
+echo "EXON_OVERLAP=$EXON_OVERLAP"
+echo "JUNCTION_OVERLAP=$JUNCTION_OVERLAP"
+echo "STRAND_SPECIFIC=$STRAND_SPECIFIC"
+echo "STRAND_SPECIFIC_DIRECTION=$STRAND_SPECIFIC_DIRECTION"
 
 
 ################################################################################
@@ -873,12 +886,10 @@ then
   mkdir $COUNT_DIR
   if [ $? -ne 0 ]
   then
-    echo "Cannot create $WEIGHT_DIR in $PWD"
+    echo "Cannot create $COUNT_DIR in $PWD"
     exit 1
   fi
 fi
-
-dateVerbose
 
 
 ################################################################################
@@ -911,7 +922,11 @@ then
     exit 1
   fi
 
-  echo "Converting file $SAM_FILE to a BAM file"
+  echo
+  echo "Converting SAM file to a BAM file."
+  echoVerbose "SAM file: $SAM_FILE_PATH"
+  echoVerbose "BAM file: $BAM_FILE"
+  date
   $CAT $SAM_FILE_PATH | $SAMTOOLS_EXE view -Sb - > $BAM_FILE
 
   if [ $? -ne 0 ]
@@ -919,7 +934,7 @@ then
     echo "ERROR: Problem with $CAT $SAM_FILE_PATH | $SAMTOOLS_EXE view -Sb - > $BAM_FILE ... exiting."
     exit 1
   fi
-  echo "Conversion completed"
+  echo "SAM file to a BAM file conversion complete."
 
   TEMP_FILES="$BAM_FILE"
   IS_BAM_FILE="TRUE"
@@ -931,7 +946,9 @@ then
   SORTED_NAMES_BAM_FILE=`echo $SAM_DIR/$BAM_FILE_BASE | sed -e 's/[.]bam$/_sorted_names/'`
   if [ ! -f $SORTED_NAMES_BAM_FILE -o "$RECOMPUTE" = "TRUE" ]
   then
-    echo "Sorting BAM file by name"
+    echo
+    echo "Sorting BAM file by name."
+    date
     $SAMTOOLS_EXE sort -n -m 5000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE
 
     if [ $? -ne 0 ]
@@ -939,9 +956,7 @@ then
       echo "ERROR: Problem with samtools sort -n -m 5000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE ... exiting."
       exit 1
     fi
-
-    echoVerbose "Done"
-    dateVerbose
+    echo "BAM file sorted."
   fi
 
   SAM_FILE_PATH=$SORTED_NAMES_BAM_FILE.bam
@@ -950,6 +965,16 @@ else
   SAM_FILE_PATH=$BAM_FILE
 fi
 
+
+################################################################################
+##
+##  Extract chromosome ids
+##
+################################################################################
+
+echo
+echo "Extracting chromosome ids."
+date
 $SAMTOOLS_EXE view -H $SAM_FILE_PATH | grep "^@SQ" | cut -f 2 | sed -e "s/^SN://" | sed -e 's/^/#/' | sed -e 's/$/#/' > $SAM_DIR/chromsomes.txt
 if [ $? -ne 0 ]
 then
@@ -996,19 +1021,22 @@ fi
 
 if [ "$RECOMPUTE" = "TRUE" -o ! -f $WEIGHT_FILE ]
 then
-  echo "Computing read weights" > $WEIGHT_DIR/${SAM_FILE_BASE}.log
+  echo ""
+  echo "Starting computation of read weights"
+  date
   COMPUTE_READ_WEIGHT_JAVA_CMD="ComputeReadWeightsSam -o $WEIGHT_FILE"
   if [ "$IS_BAM_FILE" = "TRUE" ]
   then
-    echoVerbose "Command line call: $SAMTOOLS_EXE view $SAM_FILE_PATH | $JAVA $COMPUTE_READ_WEIGHT_JAVA_CMD" >> $WEIGHT_DIR/${SAM_FILE_BASE}.log
+    echoVerbose "Command:" > $WEIGHT_DIR/${SAM_FILE_BASE}.log
+    echoVerbose "$SAMTOOLS_EXE view $SAM_FILE_PATH | $JAVA $COMPUTE_READ_WEIGHT_JAVA_CMD" >> $WEIGHT_DIR/${SAM_FILE_BASE}.log
     $SAMTOOLS_EXE view $SAM_FILE_PATH | $JAVA $COMPUTE_READ_WEIGHT_JAVA_CMD >> $WEIGHT_DIR/${SAM_FILE_BASE}.log 2>&1 &
     COMPUTE_READ_WEIGHT_PID=$!      
   else
-    echoVerbose "Command line call: $JAVA $COMPUTE_READ_WEIGHT_JAVA_CMD -s $SAM_FILE_PATH" >> $WEIGHT_DIR/${SAM_FILE_BASE}.log
+    echoVerbose "Command:" > $WEIGHT_DIR/${SAM_FILE_BASE}.log
+    echoVerbose "$JAVA $COMPUTE_READ_WEIGHT_JAVA_CMD -s $SAM_FILE_PATH" >> $WEIGHT_DIR/${SAM_FILE_BASE}.log
     $JAVA $COMPUTE_READ_WEIGHT_JAVA_CMD -s $SAM_FILE_PATH >> $WEIGHT_DIR/${SAM_FILE_BASE}.log 2>&1 &
     COMPUTE_READ_WEIGHT_PID=$!  
   fi
-  dateVerbose
 fi
 
 WEIGHT_OPTION="-w $WEIGHT_FILE -W $READ_WEIGHT_THRESHOLD"
@@ -1029,10 +1057,12 @@ EXON_BED_FILE_BASE=`basename $EXON_BED_FILE`
 
 if [ "$RECOMPUTE" = "TRUE" -o ! -f $INTERSECTION_BED_FILE_GZIP ]
 then
-  echo "Converting SAM/BAM file:"
-  echo $SAM_FILE_BASE
-  echo "to a BED file and intersecting it with file:"
-  echo $EXON_BED_FILE_BASE
+  echo
+  echo "Converting SAM/BAM file to a BED file and intersecting it with the BED file"
+  echo "containing the genomic exon coordinates."
+  echoVerbose "SAM file: $SAM_FILE_BASE"
+  echoVerbose "Exon BED file: $EXON_BED_FILE_BASE"
+  date
   if [ "$IS_BAM_FILE" = "TRUE" ]
   then
     echoVerbose "Command:"
@@ -1064,8 +1094,8 @@ then
       exit 1
     fi
   fi
+  echo "SAM/BAM file intersected with exon BED file."
 fi
-dateVerbose
 
 
 ################################################################################
@@ -1120,12 +1150,18 @@ then
     GENE_COUNT_OPTION="-e -O 1"
   fi
 
-  echo "Computing gene counts"
+  echo
+  echo "Starting computation of gene counts"
   echoVerbose "Read weight threshold: $READ_WEIGHT_THRESHOLD"
   echoVerbose "Weight file: $WEIGHT_FILE"
+  date
+  
   GENE_COUNT_JAVA_CMD="ComputeCounts $GENE_COUNT_OPTION $WEIGHT_OPTION $COUNT_STRAND_SPECIFIC_OPTION $UNAMBIGUOUS_OPTION \
-         $CONTAINMENT_OPTION $NONSPLICE_CONFORMING_OPTION -m $EXON_GENE_MAP_FILE -b - -o $GENE_COUNT_FILE"
-  echoVerbose "Java cmd: $GENE_COUNT_JAVA_CMD"
+         $CONTAINMENT_OPTION $NONSPLICE_CONFORMING_OPTION -m $EXON_GENE_MAP_FILE_SRT -b - -o $GENE_COUNT_FILE"
+	 
+  echoVerbose "Command:"
+  echoVerbose "$GENE_COUNT_JAVA_CMD"
+  
   zcat $INTERSECTION_BED_FILE_GZIP | $JAVA $GENE_COUNT_JAVA_CMD &
   GENE_COUNT_PID=$!
   
@@ -1147,11 +1183,16 @@ fi
 
 if [ "$COMPUTE_EXON_COUNT" = "TRUE" ]
 then
-
-  echo "Computing exon counts with minimum overlap $EXON_OVERLAP" > $COUNT_DIR/genomic-exon-count.log
+  echo
+  echo "Starting computation of exon counts"
   EXON_COUNT_JAVA_CMD="ComputeCounts -e $WEIGHT_OPTION $COUNT_STRAND_SPECIFIC_OPTION $NONSPLICE_CONFORMING_OPTION $UNAMBIGUOUS_OPTION \
       -O $EXON_OVERLAP -m $EXON_EXON_MAP_FILE -b - -o $EXON_COUNT_FILE"
+
+  echo -n > $COUNT_DIR/genomic-exon-count.log
+  echoVerbose "Command:" >> $COUNT_DIR/genomic-exon-count.log
   echoVerbose "$EXON_COUNT_JAVA_CMD" >> $COUNT_DIR/genomic-exon-count.log
+  date
+    
   zcat $INTERSECTION_BED_FILE_GZIP | $JAVA $EXON_COUNT_JAVA_CMD >> $COUNT_DIR/genomic-exon-count.log 2>&1 &
   EXON_COUNT_PID=$!
   
@@ -1160,7 +1201,7 @@ fi
 
 ################################################################################
 ##
-##  Wait for the computation of the number of expressed reads to finish
+##  Compute junction counts using EXON_JUNCTION_MAP_FILE from the BED file
 ##
 ################################################################################
 
@@ -1350,6 +1391,6 @@ then
   fi
 fi
 
-dateVerbose
+date
 echo "Compute genomic counts successfully completed."
 exit $EXIT_STATUS
