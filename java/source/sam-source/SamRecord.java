@@ -650,8 +650,12 @@ public class SamRecord implements Comparable<SamRecord> {
   public boolean isMate (SamRecord samRecord) {
 
     if (debugLevel >= 2) {
-      System.out.println("Testing: " + getMateReferenceName() + " = " + samRecord.getReferenceName()+ ", " + getMatePosition() + " = " +
-			 samRecord.getPosition() + ", " + getReferenceName() + " = " + samRecord.getMateReferenceName()+ ", " +
+      System.out.println("Testing: " +
+			 samRecord.getFlagReadIndex () + " != " + getFlagReadIndex() + ", " +
+			 originalFragmentName + " = " + samRecord.getOriginalFragmentName() + ", " +
+			 getMateReferenceName() + " = " + samRecord.getReferenceName()+ ", " +
+			 getMatePosition() + " = " + samRecord.getPosition() + ", " +
+			 getReferenceName() + " = " + samRecord.getMateReferenceName()+ ", " +
 			 getPosition() + " = " + samRecord.getMatePosition());
     }
 
@@ -659,7 +663,7 @@ public class SamRecord implements Comparable<SamRecord> {
       return (samRecord.getHitIndex() == hitIndex);
     }
 
-    return (samRecord.getFlagReadIndex () != getFlagReadIndex() && originalQueryName.equals(samRecord.getOriginalQueryName()) &&
+    return (samRecord.getFlagReadIndex () != getFlagReadIndex() && originalFragmentName.equals(samRecord.getOriginalFragmentName()) &&
 	    getMateReferenceName().equals(samRecord.getReferenceName()) && getMatePosition() == samRecord.getPosition() &&
 	    getReferenceName().equals(samRecord.getMateReferenceName()) && getPosition() == samRecord.getMatePosition());
     
