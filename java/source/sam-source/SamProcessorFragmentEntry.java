@@ -76,7 +76,7 @@ class SamProcessorFragmentEntry implements SamProcessor {
 
   public void outputFragmentEntry () throws IOException {
 
-    if (fragmentEntry != null) {
+    if (fragmentEntry != null && fragmentEntry.getFragmentName() != null) {
       outputWriter.println(fragmentEntry.toPrintString ());
     }
 
