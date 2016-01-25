@@ -1,0 +1,4 @@
+#!/bin/tcsh -f
+
+javac -O -d ../classes bed-source/*java sam-source/*java -Xlint fastq-source/*java util-source/*java test-source/*java bed-special/*java
+
