@@ -651,6 +651,7 @@ public class ComputeGenomeSamFile {
 	break;
       case 'S':
 	singleReadAlignments = false;
+	break;
       case 'W':
 	UtilLib.setWarningsOn (true);
 	break;	

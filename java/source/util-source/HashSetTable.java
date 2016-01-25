@@ -21,20 +21,18 @@ implied. See the License for the specific language governing
 permissions and limitations under the License.
 */
 
-
-
 import java.util.*;
 
 
 /***********************************************************************************
  *
- *
- *
+ *       class HashSetTable
  *
  ***********************************************************************************/
 
 public class HashSetTable<E, F> extends Hashtable<E, HashSet<F>> {
 
+  public static final long serialVersionUID = 189789086;
 
   HashSetTable () {
     super ();
