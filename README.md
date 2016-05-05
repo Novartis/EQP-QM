@@ -33,8 +33,9 @@ Dependencies
 
 * Python (>= version 2.6.5, imported libraries: copy, gettext, gzip,
   numpy, os, re, sets, sys, textwrap, warnings, argparse)
+* R (>= version 2.10.1)
 * Java (>= version 1.6)
-* samtools (>= version 0.1.17)
+* samtools (>= version 0.1.19)
 * bedtools (>= version 2.24.0)
 
 
