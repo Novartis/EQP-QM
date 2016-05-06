@@ -21,7 +21,7 @@
 PROG_NAME=`basename $0`
 PROG_DIR=`dirname $0`
 PROG_DIR=`cd "$PROG_DIR" && pwd`
-VERSION=1.0.0
+VERSION=2.1.0
 PID="$$"
 
 ## Ensure that pipes report the exit status of the first failed job
@@ -185,26 +185,43 @@ dateVerbose ()
 checkVersion ()
 {
   TOOL_NAME="$1"
-  VERSION1="$2"
-  VERSION2="$3"
+  VERSION1=`echo "$2" | sed -e 's/^[^0-9]*//'`
+  VERSION2=`echo "$3" | sed -e 's/^[^0-9]*//'`
 
   VERSION1_FORMAT=`echo $VERSION1 | sed -e 's/^\([0-9][0-9]*\)[.]\([0-9][0-9]*\)[.]\([0-9][0-9]*\).*/okay/'`
+  if [ "$VERSION1_FORMAT" != "okay" -a "$TOOL_NAME" = "samtools" ]
+  then
+    VERSION1_FORMAT=`echo $VERSION1 | sed -e 's/^\([0-9][0-9]*\)[.]\([0-9][0-9]*\).*/okay/'`
+  fi
   if [ "$VERSION1_FORMAT" != "okay" ]
   then
-    echo "Version format: $VERSION1 for $TOOL_NAME not recognized."
+    echo "Version format for $TOOL_NAME: $VERSION1 not recognized."
     exit 1
   fi
+  
   VERSION2_FORMAT=`echo $VERSION2 | sed -e 's/^\([0-9][0-9]*\)[.]\([0-9][0-9]*\)[.]\([0-9][0-9]*\).*/okay/'`
+  if [ "$VERSION2_FORMAT" != "okay" -a "$TOOL_NAME" = "samtools" ]
+  then
+    VERSION2_FORMAT=`echo $VERSION2 | sed -e 's/^\([0-9][0-9]*\)[.]\([0-9][0-9]*\).*/okay/'`
+  fi
   if [ "$VERSION2_FORMAT" != "okay" ]
   then
-    echo "Version format: $VERSION2 for $TOOL_NAME not recognized."
+    echo "Version format for $TOOL_NAME: $VERSION2 not recognized."
     exit 1
   fi
 
   VERSION1_FIRST=`echo $VERSION1 | sed -e 's/^\([0-9]*\).*/\1/'`
   VERSION2_FIRST=`echo $VERSION2 | sed -e 's/^\([0-9]*\).*/\1/'`
 
-  ## echo "VERSION1_FIRST: $VERSION1_FIRST, VERSION2_FIRST: $VERSION2_FIRST"
+  if [ "$TOOL_NAME" = "samtools" ]
+  then
+    if [ "$VERSION1_FIRST" = "0" ]
+    then
+      SAMTOOLS_NEW_VERSION=""
+    else
+      SAMTOOLS_NEW_VERSION="TRUE"
+    fi
+  fi
 
   if [ "$VERSION1_FIRST" = "" -o "$VERSION1_FIRST" -lt "$VERSION2_FIRST" ]
   then
@@ -258,28 +275,32 @@ checkTool ()
   if [ ! -f $TOOL_EXE ]
   then
     TOOL_EXE=`which $TOOL_NAME 2>&1`
-    TOOL_EXE_COMMAND_NOT_FOUND=`file $TOOL_EXE | tr '[A-Z]' '[a-z]' | sed -e 's/.*no such file or directory)$/command not found/' | \
-                                sed -e 's/.*command not found.*$/command not found/' | \
-				sed -e "s/^which: no $TOOL_NAME in .*/command not found/"`
-    if [ "$TOOL_EXE_COMMAND_NOT_FOUND" = "command not found" ]
+  fi
+  
+  TOOL_EXE_COMMAND_NOT_FOUND=`file $TOOL_EXE | tr '[A-Z]' '[a-z]' | sed -e 's/.*no such file or directory)$/command not found/' | \
+                              sed -e 's/.*command not found.*$/command not found/' | \
+ 				sed -e "s/^which: no $TOOL_NAME in .*/command not found/" | head -1`
+  if [ "$TOOL_EXE_COMMAND_NOT_FOUND" = "command not found" ]
+  then
+    echo "$TOOL_NAME found neither in"
+    echo "  $TOOL_DIR"
+    echo "nor in"
+    echo "  $PATH."
+    echo "Please make sure that $TOOL_NAME (>= version $TOOL_VERSION) is available ... exiting"
+    exit 1
+  else
+    if [ "$TOOL_NAME" = "bedtools" ]
     then
-      echo "$TOOL_NAME not found in PATH. Please make sure that $TOOL_NAME (>=$TOOL_VERSION) is"
-      echo "available ... exiting"
-      exit 1
+      ACTUAL_TOOL_VERSION=`$TOOL_EXE --version | sed -e "s/$TOOL_NAME v*//"`
+    elif [ "$TOOL_NAME" = "samtools" ]
+    then
+      ACTUAL_TOOL_VERSION=`$TOOL_EXE 2>&1 | fgrep "Version:"`
     else
-      if [ "$TOOL_NAME" = "bedtools" ]
-      then
-        ACTUAL_TOOL_VERSION=`$TOOL_EXE --version | sed -e "s/$TOOL_NAME v*//"`
-      elif [ "$TOOL_NAME" = "samtools" ]
-      then
-        ACTUAL_TOOL_VERSION=`$TOOL_EXE 2>&1 | fgrep "Version:" | sed -e "s/Version: \([0-9]*[.][0-9]*[.][0-9]*\).*/\1/"`
-      else
-        echo "Cannot check tool $TOOL_NAME"
+      echo "Cannot check tool $TOOL_NAME"
 	return
-      fi
-      ## echo "ACTUAL_TOOL_VERSION: $ACTUAL_TOOL_VERSION"
-      checkVersion $TOOL_NAME $ACTUAL_TOOL_VERSION $TOOL_VERSION
     fi
+    echoVerbose "Using $TOOL_NAME version: $ACTUAL_TOOL_VERSION"
+    checkVersion $TOOL_NAME "$ACTUAL_TOOL_VERSION" "$TOOL_VERSION"
   fi
 }
 
@@ -563,7 +584,7 @@ if [[ -x $SETUP_SCRIPT ]]
 then
   . $SETUP_SCRIPT
   GENE_MODEL_PREFIX=$FILE_BASE
-elif [ -e $PROJECT_DIR/exon-pipeline-files ]
+elif [ -e $PROJECT_DIR/exon-pipeline-files/setup.sh ]
 then
   echo "File $PROJECT_DIR/bin/setup.sh not found."
   echo "Please make sure that all files of the project instance are copied."
@@ -743,7 +764,7 @@ then
 fi
 checkTool $TOOLS_DIR bedtools 2.24.0
 BEDTOOLS_EXE=$TOOL_EXE
-checkTool $TOOLS_DIR samtools 0.1.17
+checkTool $TOOLS_DIR samtools 0.1.19
 SAMTOOLS_EXE=$TOOL_EXE
 
 
@@ -913,7 +934,7 @@ then
 
   if [ "$SAM_FILE_EXT" = "sam.gz" ]
   then
-    CAT="zcat"
+    CAT="gunzip -c"
   elif [ "$SAM_FILE_EXT" = "sam" ]
   then
     CAT="cat"
@@ -949,11 +970,17 @@ then
     echo
     echo "Sorting BAM file by name."
     date
-    $SAMTOOLS_EXE sort -n -m 5000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE
+    if [ "$SAMTOOLS_NEW_VERSION" != "" ]
+    then
+      SAMTOOLS_CMD="$SAMTOOLS_EXE sort -n -m 5000000000 -o $SORTED_NAMES_BAM_FILE.bam $BAM_FILE"
+    else
+      SAMTOOLS_CMD="$SAMTOOLS_EXE sort -n -m 5000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE"
+    fi
+    $SAMTOOLS_CMD
 
     if [ $? -ne 0 ]
     then
-      echo "ERROR: Problem with samtools sort -n -m 5000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE ... exiting."
+      echo "ERROR: Problem with $SAMTOOLS_CMD ... exiting."
       exit 1
     fi
     echo "BAM file sorted."
@@ -1124,7 +1151,7 @@ fi
 ##
 ################################################################################
 
-# zcat $INTERSECTION_BED_FILE_GZIP | cut -f 4 | tr "-" "\t" | cut -f 1 |  sort -u | wc -l > $COUNT_DIR/num-expressed-reads.txt &
+# gunzip -c $INTERSECTION_BED_FILE_GZIP | cut -f 4 | tr "-" "\t" | cut -f 1 |  sort -u | wc -l > $COUNT_DIR/num-expressed-reads.txt &
 # NUMBER_EXPRESSED_READS_PID=$!
 
 
@@ -1162,7 +1189,7 @@ then
   echoVerbose "Command:"
   echoVerbose "$GENE_COUNT_JAVA_CMD"
   
-  zcat $INTERSECTION_BED_FILE_GZIP | $JAVA $GENE_COUNT_JAVA_CMD &
+  gunzip -c $INTERSECTION_BED_FILE_GZIP | $JAVA $GENE_COUNT_JAVA_CMD &
   GENE_COUNT_PID=$!
   
 fi
@@ -1193,7 +1220,7 @@ then
   echoVerbose "$EXON_COUNT_JAVA_CMD" >> $COUNT_DIR/genomic-exon-count.log
   date
     
-  zcat $INTERSECTION_BED_FILE_GZIP | $JAVA $EXON_COUNT_JAVA_CMD >> $COUNT_DIR/genomic-exon-count.log 2>&1 &
+  gunzip -c $INTERSECTION_BED_FILE_GZIP | $JAVA $EXON_COUNT_JAVA_CMD >> $COUNT_DIR/genomic-exon-count.log 2>&1 &
   EXON_COUNT_PID=$!
   
 fi
@@ -1295,11 +1322,11 @@ then
       exit 1
     fi
   else
-    echoVerbose "zcat $SAM_FILE_PATH | $EXTRACT_EXON_EXON_CMD"
-    zcat $SAM_FILE_PATH | $JAVA $EXTRACT_EXON_EXON_CMD
+    echoVerbose "gunzip -c $SAM_FILE_PATH | $EXTRACT_EXON_EXON_CMD"
+    gunzip -c $SAM_FILE_PATH | $JAVA $EXTRACT_EXON_EXON_CMD
     if [ $? -ne 0 ]
     then
-      echo "Command zcat $SAM_FILE_PATH | $EXTRACT_EXON_EXON_CMD failed ... exiting."
+      echo "Command gunzip -c $SAM_FILE_PATH | $EXTRACT_EXON_EXON_CMD failed ... exiting."
       exit 1
     fi
   fi
@@ -1336,7 +1363,7 @@ then
      -O $JUNCTION_OVERLAP $NONSPLICE_CONFORMING_OPTION -b - -o $JUNCTION_COUNT_FILE  $COUNT_STRAND_SPECIFIC_OPTION"
   
   echoVerbose "$JUNCTION_COUNT_JAVA_CMD"
-  zcat $INTERSECTION_BED_FILE_GZIP | $JAVA $JUNCTION_COUNT_JAVA_CMD
+  gunzip -c $INTERSECTION_BED_FILE_GZIP | $JAVA $JUNCTION_COUNT_JAVA_CMD
   if [ $? -ne 0 ]
   then
     echo "Command $INTERSECTION_BED_FILE_GZIP | $JAVA $JUNCTION_COUNT_JAVA_CMD failed ... exiting."
@@ -1352,7 +1379,7 @@ then
        -O $JUNCTION_OVERLAP $NONSPLICE_CONFORMING_OPTION -b - -o $JUNCTION_COUNT_FILE.old  $COUNT_STRAND_SPECIFIC_OPTION"
        
     echoVerbose "$JUNCTION_COUNT_JAVA_CMD"
-    zcat $INTERSECTION_BED_FILE_GZIP | $JAVA $JUNCTION_COUNT_JAVA_CMD
+    gunzip -c $INTERSECTION_BED_FILE_GZIP | $JAVA $JUNCTION_COUNT_JAVA_CMD
     if [ $? -ne 0 ]
     then
       echo "Command $INTERSECTION_BED_FILE_GZIP | $JAVA $JUNCTION_COUNT_JAVA_CMD failed ... exiting."
