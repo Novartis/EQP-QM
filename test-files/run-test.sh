@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 PROG_NAME=`basename $0`
 PROG_DIR=`dirname $0`
@@ -69,11 +69,13 @@ fi
 ################################################################################
 
 echo
+COMPARISON_DIR="comparison-files"
 for FILE in test-alignment-file-gene test-alignment-file-exon test-alignment-file-junction
 do
   echo "Checking file count-files/$FILE.cnt"
-  paste count-files/$FILE.cnt comparison-files/$FILE.cnt > count-files/test-alignment-file-gene.cmp
+  paste count-files/$FILE.cnt $COMPARISON_DIR/$FILE.cnt > count-files/test-alignment-file-gene.cmp
   DIFF=`awk 'function abs(x){return ((x < 0.0) ? -x : x)} { if (abs($2 - $4) > 0.00001) { print "Difference detected"; exit 1} }' count-files/test-alignment-file-gene.cmp`
+  
   if [ "$DIFF" != "" ]
   then
     echo "The computed values by the test for file $FILE"
