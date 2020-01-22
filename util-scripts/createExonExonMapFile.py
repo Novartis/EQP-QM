@@ -76,7 +76,7 @@ def readGtfFile (gtfFilename):
  
   try:
     gtfFile = open(gtfFilename)
-    print >> sys.stderr, "Reading file: " + gtfFilename
+    print("Reading file: " + gtfFilename, file=sys.stderr)
     lineNum = 0
     for line in gtfFile:
       line = line.rstrip ()
@@ -118,9 +118,9 @@ def readGtfFile (gtfFilename):
               exonNumber = int(annotationValue)
 
         if geneId == "":
-          print >> sys.stderr, "WARNING: no gene id for exon " + exon + " of transcript " + transcriptId
+          print("WARNING: no gene id for exon " + exon + " of transcript " + transcriptId, file=sys.stderr)
         if exonId == "":
-          print >> sys.stderr, "WARNING: no exon id for exon " + exon + " of gene " + geneId
+          print("WARNING: no exon id for exon " + exon + " of gene " + geneId, file=sys.stderr)
         else:
           geneExon = geneId + "/" + exon
           exonIdExonLocationMap[exonId] = geneExon
@@ -139,7 +139,7 @@ def readGtfFile (gtfFilename):
     
     gtfFile.close()
   
-  except IOError, e:
+  except IOError as e:
     raise Exception("File " + gtfFilename + " not found ... exiting\n" + "Unix error message: " + str(e[0]) + " " + str(e[1]))
   
   return exonIdExonLocationMap, exonLocationExonIdMap
@@ -155,13 +155,13 @@ exonIdExonLocationMap, exonLocationExonIdMap = readGtfFile(gtfFilename)
  
 try:
   mapFile = open(mapFilename, 'w')
-except IOError, e:
+except IOError as e:
   raise Exception("File " + mapFilename + " cannot be opened for writing.\n" +"Unix error message: " + str(e[0]) + " " + str(e[1]))
 
-print >> sys.stderr, "Writing exon - exon pairs to file: " + mapFilename
+print("Writing exon - exon pairs to file: " + mapFilename, file=sys.stderr)
 for exonLocationId in sorted(exonLocationExonIdMap.keys()):
   for exonId in sorted(exonLocationExonIdMap[exonLocationId]):
-    print >> mapFile, "\t".join([exonLocationId, exonId])
+    print("\t".join([exonLocationId, exonId]), file=mapFile)
 
 mapFile.close ()
 
@@ -172,14 +172,14 @@ genomeExonBedFilename = args.genomeExonBedFile
 if geneExonMapFilename != "":
   try:
     geneExonMapFile = open(geneExonMapFilename, 'w')
-  except IOError, e:
+  except IOError as e:
     raise Exception("File " + geneExonMapFilename + " cannot be opened for writing.\n" +"Unix error message: " + str(e[0]) + " " + str(e[1]))
-  print >> sys.stderr, "Writing exon gene pairs to file: " + geneExonMapFilename
+  print("Writing exon gene pairs to file: " + geneExonMapFilename, file=sys.stderr)
   
   for exonLocationId in sorted(exonLocationExonIdMap.keys()):
     geneId, chromosome, start, end, strand = exonLocationId.split("/")
     exonId = "/".join([chromosome, start, end, strand])
-    print >> geneExonMapFile, "\t".join([exonId, geneId])
+    print("\t".join([exonId, geneId]), file=geneExonMapFile)
     
   geneExonMapFile.close ()
 
@@ -188,9 +188,9 @@ if geneExonMapFilename != "":
 if genomeExonBedFilename != "":
   try:
     genomeExonBedFile = open(genomeExonBedFilename, 'w')
-  except IOError, e:
+  except IOError as e:
     raise Exception("File " + genomeExonBedFilename + " cannot be opened for writing.\n" +"Unix error message: " + str(e[0]) + " " + str(e[1]))
-  print >> sys.stderr, "Writing exon genome BED entries to file: " + genomeExonBedFilename
+  print("Writing exon genome BED entries to file: " + genomeExonBedFilename, file=sys.stderr)
   
   for exonLocationId in sorted(exonLocationExonIdMap.keys()):
     geneId, chromosome, start, end, strand = exonLocationId.split("/")
@@ -198,7 +198,7 @@ if genomeExonBedFilename != "":
     
     bedStart = str(int(start)-1)
     bedEnd   = end
-    print >> genomeExonBedFile, "\t".join([chromosome, bedStart, bedEnd, exonId, "0", strand])
+    print("\t".join([chromosome, bedStart, bedEnd, exonId, "0", strand]), file=genomeExonBedFile)
     
   genomeExonBedFile.close ()
  

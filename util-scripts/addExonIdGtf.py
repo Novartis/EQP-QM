@@ -61,9 +61,9 @@ outputFilename = args.outputFile
 warningsOn     = args.warningsOn
 
 if len(sys.argv) <= 1:
-  print >> sys.stderr,  "Using default arguments: "
-  print >> sys.stderr,  "gtfFilename: " + gtfFilename
-  print >> sys.stderr,  "outputFilename: " + outputFilename
+  print("Using default arguments: ", file=sys.stderr)
+  print("gtfFilename: " + gtfFilename, file=sys.stderr)
+  print("outputFilename: " + outputFilename, file=sys.stderr)
 
 lineNumChunkSize = 50000
 
@@ -75,14 +75,14 @@ lineNumChunkSize = 50000
 
 try:
   gtfFile = open(gtfFilename)
-  print >> sys.stderr, "Reading file: " + gtfFilename
-except IOError, e:
+  print("Reading file: " + gtfFilename, file=sys.stderr)
+except IOError as e:
   raise Exception ("File " + gtfFilename + " not found\n" + "Unix Error: " + str(e[0]) + " " + str(e[1]))
 
 try:
   outputFile = open(outputFilename, 'w')
-  print >> sys.stderr, "Writing to file: " + outputFilename
-except IOError, e:
+  print("Writing to file: " + outputFilename, file=sys.stderr)
+except IOError as e:
   raise Exception ("File " + outputFilename + " not found\n" + "Unix error: " + str(e[0]) + " " + str(e[1]))
 
 lineNum  = 0
@@ -111,7 +111,7 @@ for line in gtfFile:
       externalExonId = ":".join(["exon", chromosome, "-".join(map(str, interval)), strand])
       gtfEntries[8] = gtfEntries[8] + ' exon_id "' + externalExonId + '";'
 
-    print >> outputFile, "\t".join(gtfEntries)
+    print("\t".join(gtfEntries), file=outputFile)
   
   lineNum = lineNum + 1
   if lineNum % lineNumChunkSize == 0:
@@ -125,6 +125,6 @@ if lineNum > lineNumChunkSize:
 ## Close the files
 gtfFile.close()
 outputFile.close ()
-print >> sys.stderr, str(numExons) + " exon entries found."
+print(str(numExons) + " exon entries found.", file=sys.stderr)
 
 

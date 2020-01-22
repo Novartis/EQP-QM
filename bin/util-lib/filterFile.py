@@ -98,7 +98,11 @@ if len(index) != len(filterIndex):
 def openFile (filename, mode="r"):
   try:
     if filename.endswith(".gz"):
-      fileLink = gzip.open(filename, mode + "b")
+      if mode == "r":
+        mode = "rt"
+      elif mode == "w":
+        mode = "wt"
+      fileLink = gzip.open(filename, mode)
     elif filename != "-":
       fileLink = open(filename, mode)
     elif "r" in mode:
@@ -110,7 +114,7 @@ def openFile (filename, mode="r"):
 
     return fileLink
       
-  except IOError, e:
+  except IOError as e:
     raise Exception (filename + " cannot be opened ... exiting\n" +
                      "Unix error code and message: " + str(e[0]) + " " + str(e[1]))
   
@@ -123,10 +127,10 @@ def openFile (filename, mode="r"):
 
 try:
   filterFile = openFile(filterFilename)
-except IOError, e:
+except IOError as e:
   raise Exception (filterFilename + " cannot be opened ... exiting\n" + 
                    "Unix error code and message on opening: " + str(e[0]) + " " + str(e[1]))
-print >> sys.stderr, "Reading file " + filterFilename
+print("Reading file " + filterFilename, file=sys.stderr)
 
 
 filterEntries = set([])
@@ -146,7 +150,7 @@ if lineNum > 500000:
   sys.stderr.write("\n")
   sys.stderr.flush ()
 
-print >> sys.stderr, str(lineNum) + " filter entries read."
+print(str(lineNum) + " filter entries read.", file=sys.stderr)
 filterFile.close()
 
 
@@ -159,22 +163,22 @@ filterFile.close()
 try:
   if inputFilename == "" or inputFilename == "-":
     inputFile = sys.stdin
-    print >> sys.stderr, "Reading from stdin"
+    print("Reading from stdin", file=sys.stderr)
   else:
     inputFile = openFile(inputFilename)
-    print >> sys.stderr, "Reading file " + inputFilename
-except IOError, e:
+    print("Reading file " + inputFilename, file=sys.stderr)
+except IOError as e:
   raise Exception (inputFilename + " cannot be opened ... exiting\n" + 
                    "Unix error code and message on opening: " + str(e[0]) + " " + str(e[1]))
 
 try:
   if outputFilename == "" or outputFilename == "-":
     outputFile = sys.stdout
-    print >> sys.stderr, "Writing to stdout"
+    print("Writing to stdout", file=sys.stderr)
   else:
     outputFile = openFile(outputFilename, 'w')
-    print >> sys.stderr,  "Writing to file " + outputFilename
-except IOError, e:
+    print("Writing to file " + outputFilename, file=sys.stderr)
+except IOError as e:
   raise Exception (outputFilename + " cannot be opened ... exiting\n" + 
                    "Unix error code and message on opening: " + str(e[0]) + " " + str(e[1]))
 
@@ -191,7 +195,7 @@ for line in inputFile:
   fieldFound = lineField in filterEntries
 
   if (fieldFound and not invertFilter) or (not fieldFound and invertFilter):
-    print >> outputFile, line
+    print(line, file=outputFile)
     numSelectedInputEntries += 1
     
   lineNum += 1
@@ -203,7 +207,7 @@ if lineNum > 500000:
   sys.stderr.write("\n")
   sys.stderr.flush ()
       
-print >> sys.stderr, str(numSelectedInputEntries) + " Input entries of " + str(lineNum) + " selected."
+print(str(numSelectedInputEntries) + " Input entries of " + str(lineNum) + " selected.", file=sys.stderr)
 inputFile.close()
 outputFile.close ()
 

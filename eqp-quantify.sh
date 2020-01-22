@@ -764,7 +764,7 @@ then
 fi
 checkTool $TOOLS_DIR bedtools 2.24.0
 BEDTOOLS_EXE=$TOOL_EXE
-checkTool $TOOLS_DIR samtools 0.1.19
+checkTool $TOOLS_DIR samtools 1.3.1
 SAMTOOLS_EXE=$TOOL_EXE
 
 
@@ -972,9 +972,9 @@ then
     date
     if [ "$SAMTOOLS_NEW_VERSION" != "" ]
     then
-      SAMTOOLS_CMD="$SAMTOOLS_EXE sort -n -m 5000000000 -o $SORTED_NAMES_BAM_FILE.bam $BAM_FILE"
+      SAMTOOLS_CMD="$SAMTOOLS_EXE sort -T $SAM_DIR -n -m 5G -o $SORTED_NAMES_BAM_FILE.bam $BAM_FILE"
     else
-      SAMTOOLS_CMD="$SAMTOOLS_EXE sort -n -m 5000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE"
+      SAMTOOLS_CMD="$SAMTOOLS_EXE sort -T $SAM_DIR -n -m 5000000000 $BAM_FILE $SORTED_NAMES_BAM_FILE"
     fi
     $SAMTOOLS_CMD
 

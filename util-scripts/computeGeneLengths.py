@@ -240,11 +240,11 @@ def readGtfFile (gtfFilename):
  
   try:
     gtfFile = open(gtfFilename)
-  except IOError, e:
+  except IOError as e:
     raise Exception(gtfFilename + " cannot be opened ... skipping\n" + 
                     "Unix error code and message: " + str(e[0]) + " " + str(e[1]))
 
-  print >> sys.stderr, "Opening file: " + gtfFilename
+  print("Opening file: " + gtfFilename, file=sys.stderr)
   lineNum = 0
   oldTranscriptId = ""
   alignmentNumber = 1
@@ -312,8 +312,8 @@ def readGtfFile (gtfFilename):
         #print "transcriptChromosomeStrand of " + transcriptId + "." + str(alignmentNumber) + " set to " + chromosome + strand
         transcriptChromosomeStrand[transcriptId][alignmentNumber] = chromosome + strand
       elif transcriptChromosomeStrand[transcriptId][alignmentNumber] != chromosome + strand:
-        print >> sys.stderr, "WARNING: Exon number " + str(exonNumber) + " of transcript " + transcriptId + " on chromosome/strand " + chromosome + strand + \
-              " is assigned to alignment " + str(alignmentNumber) + " on chromosome/strand " + transcriptChromosomeStrand[transcriptId][alignmentNumber]
+        print("WARNING: Exon number " + str(exonNumber) + " of transcript " + transcriptId + " on chromosome/strand " + chromosome + strand + \
+              " is assigned to alignment " + str(alignmentNumber) + " on chromosome/strand " + transcriptChromosomeStrand[transcriptId][alignmentNumber], file=sys.stderr)
       
       if alignmentNumber in transcriptExonList[transcriptId]:
         transcriptExonList[transcriptId][alignmentNumber].append(interval)
@@ -321,7 +321,7 @@ def readGtfFile (gtfFilename):
         transcriptExonList[transcriptId][alignmentNumber] = [interval]
         
       if exonNumber in transcriptExonList[transcriptId][alignmentNumber]:
-        print >> sys.stderr ("Exon number: " + str(exonNumber) + " already stored for alignment " + str(alignmentNumber) + " of " + transcriptId)
+        print(file=sys.stderr ("Exon number: " + str(exonNumber) + " already stored for alignment " + str(alignmentNumber) + " of " + transcriptId))
         sys.exit(1)
       
       if geneId != "" and transcriptId != "":
@@ -473,17 +473,17 @@ def assignTranscriptAlignments (geneId, geneTranscriptList, transcriptIntervals,
               geneAlignmentTranscripts[geneAlignmentNumber].extend(geneAlignmentTranscripts[curGeneAlignmentNumber])
               del geneAlignmentTranscripts[curGeneAlignmentNumber]
               if geneChromosomeStrand[geneAlignmentNumber] != geneChromosomeStrand[curGeneAlignmentNumber]:
-                print >> sys.stderr, "Chromosome strands of assigned gene alignment numbers of gene " + geneId + " differ: " + \
-                      geneChromosomeStrand[geneAlignmentNumber] + " vs. " + geneChromosomeStrand[curGeneAlignmentNumber]
+                print("Chromosome strands of assigned gene alignment numbers of gene " + geneId + " differ: " + \
+                      geneChromosomeStrand[geneAlignmentNumber] + " vs. " + geneChromosomeStrand[curGeneAlignmentNumber], file=sys.stderr)
                 sys.exit(1)
               else:
                 del geneChromosomeStrand[curGeneAlignmentNumber]
                 
           if geneAlignmentNumber in assignedGeneAlignmentNumbers and warningsOn:
-            print >> sys.stderr, "\nWARNING: Alignment " + str(alignmentNumber) + " of transcript: " + transcriptId + \
-                  " is also assigned to gene alignment number " + str(geneAlignmentNumber) + " of gene " + geneId
+            print("\nWARNING: Alignment " + str(alignmentNumber) + " of transcript: " + transcriptId + \
+                  " is also assigned to gene alignment number " + str(geneAlignmentNumber) + " of gene " + geneId, file=sys.stderr)
             for geneTranscriptId in geneTranscriptList:
-              print >> sys.stderr, transcriptIntervals[geneTranscriptId]
+              print(transcriptIntervals[geneTranscriptId], file=sys.stderr)
             #raise Exception ("Stop")
           
           assignedGeneAlignmentNumbers.append(geneAlignmentNumber)
@@ -495,9 +495,9 @@ def assignTranscriptAlignments (geneId, geneTranscriptList, transcriptIntervals,
           if len(transcriptIntervals[transcriptId]) > 1:
             if (geneChromosomeStrand[geneAlignmentNumber] != transcriptChromosomeStrand[transcriptId][alignmentNumber] or \
                 not contains (geneIntervals[geneAlignmentNumber], transcriptIntervals[transcriptId][alignmentNumber])) and warningsOn:
-              print >> sys.stderr, "Gene interval " + geneChromosomeStrand[geneAlignmentNumber] + ":" +  str(geneIntervals[geneAlignmentNumber]) + \
+              print("Gene interval " + geneChromosomeStrand[geneAlignmentNumber] + ":" +  str(geneIntervals[geneAlignmentNumber]) + \
                   " does not contain transcript interval " + transcriptChromosomeStrand[transcriptId][alignmentNumber] + ":" + \
-                  str(transcriptIntervals[transcriptId][alignmentNumber]) + " for transcript " + transcriptId + "." + str(alignmentNumber)
+                  str(transcriptIntervals[transcriptId][alignmentNumber]) + " for transcript " + transcriptId + "." + str(alignmentNumber), file=sys.stderr)
             
         elif len(geneAlignmentNumbers) == 0:
           ## There is no good match between transcript and gene alignments
@@ -535,18 +535,18 @@ def computeGeneLength (geneId, geneTranscriptList, transcriptExonList, transcrip
   maxNumTranscriptsPerGeneAlignment = max([len(geneAlignmentTranscripts[alignmentNumber]) for alignmentNumber in geneAlignmentTranscripts])
 
   if len(set(geneChromosomeStrand.values())) > 1 and warningsOn:
-    print >> sys.stderr, "WARNING: gene " + geneId + " has alignments to " + str(len(set(geneChromosomeStrand.values()))) + " chromosome/strands"
+    print("WARNING: gene " + geneId + " has alignments to " + str(len(set(geneChromosomeStrand.values()))) + " chromosome/strands", file=sys.stderr)
   
   geneLengths = {}
   for alignmentNumber in geneExonList:
     geneLengths[alignmentNumber] = computeIntervalListLength (geneExonList[alignmentNumber])
     if len(geneAlignmentTranscripts[alignmentNumber]) != maxNumTranscriptsPerGeneAlignment and warningsOn:
-      print >> sys.stderr, "WARNING: alignment " + str(alignmentNumber) + " of gene " + geneId + " on " + \
+      print("WARNING: alignment " + str(alignmentNumber) + " of gene " + geneId + " on " + \
             geneChromosomeStrand[alignmentNumber] + " is only supported by " + \
-            str(len(geneAlignmentTranscripts[alignmentNumber])) + " of " + str(maxNumTranscriptsPerGeneAlignment) + " transcripts"
+            str(len(geneAlignmentTranscripts[alignmentNumber])) + " of " + str(maxNumTranscriptsPerGeneAlignment) + " transcripts", file=sys.stderr)
       
   if min(geneLengths.values()) != max(geneLengths.values()) and warningsOn:
-    print >> sys.stderr, "WARNING: gene length values for " + geneId + " vary from " + str(min(geneLengths.values())) + " to " + str(max(geneLengths.values()))
+    print("WARNING: gene length values for " + geneId + " vary from " + str(min(geneLengths.values())) + " to " + str(max(geneLengths.values())), file=sys.stderr)
     
   return max(geneLengths.values())
 
@@ -592,8 +592,8 @@ for transcriptId in transcriptLengthList:
   transcriptLengths = [transcriptLengthList[transcriptId][alignmentNumber] for alignmentNumber in transcriptLengthList[transcriptId]]
   maxTranscriptLengths[transcriptId] = max(transcriptLengths)
   if max(transcriptLengths) != min(transcriptLengths) and warningsOn:\
-     print >> sys.stderr, "WARNING: Length of alignments for transcript " + transcriptId + " range from " + str(min(transcriptLengths)) + \
-       " to " + str(max(transcriptLengths))
+     print("WARNING: Length of alignments for transcript " + transcriptId + " range from " + str(min(transcriptLengths)) + \
+       " to " + str(max(transcriptLengths)), file=sys.stderr)
 
 
 ################################################################################
@@ -640,9 +640,9 @@ for transcriptId in transcriptAlignmentNumbers:
               transcriptsWithOverlappingAlignments.append(transcriptId)
 
 if transcriptsWithMultipleAlignments > 0:
-  print "There are " + str(transcriptsWithMultipleAlignments) + " transcripts with multiple alignments:"
-  print " - " + str(transcriptsOnMultipleChromosomeStrands) + " transcripts have alignments to different chromosome/strand pairs"
-  print " - " + str(transcriptsWithMultipleAlignmentsSameStrand) + " transcripts have multiple alignments to the same chromosome/strand"
+  print("There are " + str(transcriptsWithMultipleAlignments) + " transcripts with multiple alignments:")
+  print(" - " + str(transcriptsOnMultipleChromosomeStrands) + " transcripts have alignments to different chromosome/strand pairs")
+  print(" - " + str(transcriptsWithMultipleAlignmentsSameStrand) + " transcripts have multiple alignments to the same chromosome/strand")
 
 
 ################################################################################
@@ -681,7 +681,7 @@ for geneId in geneTranscriptMap:
     
     maxTranscriptLengthGene = max([maxTranscriptLengths[transcriptId] for transcriptId in geneTranscriptList])
     if maxTranscriptLengthGene > geneLengths[geneId] and warningsOn:
-      print "WARNING: Gene " + geneId + " has transcripts that are " + str(maxTranscriptLengthGene - geneLengths[geneId]) + " longer than " + str(geneLengths[geneId])
+      print("WARNING: Gene " + geneId + " has transcripts that are " + str(maxTranscriptLengthGene - geneLengths[geneId]) + " longer than " + str(geneLengths[geneId]))
 
 
 ## Check "normal" genes, that is, genes with transcripts that align only to one chromosome strand and
@@ -711,7 +711,7 @@ for geneId in geneTranscriptMap:
     numNormalGenes = numNormalGenes + 1
     geneLength = computeIntervalListLength (geneIntervalList)
     if geneLength != geneLengths[geneId]:
-      print "Differing gene lengths for gene " + geneId + ": " + str(geneLength) + " vs. " + str(geneLengths[geneId])
+      print("Differing gene lengths for gene " + geneId + ": " + str(geneLength) + " vs. " + str(geneLengths[geneId]))
     
 
 ################################################################################
@@ -721,18 +721,18 @@ for geneId in geneTranscriptMap:
 ################################################################################
   
 try:
-  print "Writing lengths to " + geneLengthFile
+  print("Writing lengths to " + geneLengthFile)
   outputFile = open(geneLengthFile, 'w')
   
-  print >> outputFile, "\t".join(["Gene Id", "Length"])
-  for geneId in sorted(geneLengths.iterkeys()):
-    print >> outputFile, geneId + "\t" + str(geneLengths[geneId])
+  print("\t".join(["Gene Id", "Length"]), file=outputFile)
+  for geneId in sorted(geneLengths.keys()):
+    print(geneId + "\t" + str(geneLengths[geneId]), file=outputFile)
 
   outputFile.close()
   
-except IOError, e:
-  print geneLengthFile + " cannot be opened ... skipping"
-  print "Error: " + str(e[0]) + " " + str(e[1])
+except IOError as e:
+  print(geneLengthFile + " cannot be opened ... skipping")
+  print("Error: " + str(e[0]) + " " + str(e[1]))
     
  
 

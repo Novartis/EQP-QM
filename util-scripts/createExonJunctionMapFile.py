@@ -71,7 +71,7 @@ else:
   inputArgs.append(os.path.join(mapPath, geneModel + "_rna_" + organismShort + "_exon_junction.map.new"))
   inputArgs.append("-w")
   
-  print "No arguments given - using files in " + mapPath
+  print("No arguments given - using files in " + mapPath)
   args = parser.parse_args(inputArgs)
 
 debugLevel                  = args.debugLevel
@@ -92,13 +92,17 @@ addThirdColumn              = args.addThirdColumn
 def openFile (filename, mode="r"):
   try:
     if filename.endswith(".gz"):
-      fileLink = gzip.open(filename, mode + "b")
+      if mode == "r":
+        mode = "rt"
+      elif mode == "w":
+        mode = "wt"
+      fileLink = gzip.open(filename, mode)
     else:
       fileLink = open(filename, mode)
 
     return fileLink
       
-  except IOError, e:
+  except IOError as e:
     raise Exception (filename + " cannot be opened ... exiting\n" +
                      "Unix error code and message: " + str(e[0]) + " " + str(e[1]))
 
@@ -118,7 +122,7 @@ def readJunctionJunctionMapFile (junctionJunctionMapFilename):
   except IOError:
     raise Exception ("Could not open file " + junctionJunctionMapFilename)
 
-  print "Reading junction junction map file: " + junctionJunctionMapFilename
+  print("Reading junction junction map file: " + junctionJunctionMapFilename)
   i = 0
   for line in junctionJunctionMapFile:
     internalJunctionId, externalJunctionId = line.rstrip ().split ("\t")[0:2]
@@ -148,9 +152,9 @@ def readExonExonMapFile (exonExonMapFilename):
   try:
     exonExonMapFile = openFile(exonExonMapFilename)
   except IOError:
-    print "Could not open file %s" % exonExonMapFilename
+    print("Could not open file %s" % exonExonMapFilename)
     sys.exit(2)
-  print "Reading exon exon map file: " + exonExonMapFilename
+  print("Reading exon exon map file: " + exonExonMapFilename)
   i = 0
   for line in exonExonMapFile:
     internalExonId, externalExonId = line.rstrip ().split ("\t")
@@ -186,17 +190,17 @@ exonExonMap = readExonExonMapFile (exonExonMapFilename)
 try:
   junctionExonMapFile = openFile (junctionExonMapFilename)
 except IOError:
-  print "Could not open file %s" % junctionExonMapFilename
+  print("Could not open file %s" % junctionExonMapFilename)
   sys.exit(2)
 
 try:
   outputFile = openFile (outputFilename, 'w')
 except IOError:
-  print "Could not open file %s" % outputFilename
+  print("Could not open file %s" % outputFilename)
   sys.exit(2)
 
-print "Reading file " + junctionExonMapFilename + " and"
-print "writing to file " + outputFilename
+print("Reading file " + junctionExonMapFilename + " and")
+print("writing to file " + outputFilename)
 excludedExons = {}
 i = 0
 for line in junctionExonMapFile:
@@ -209,11 +213,11 @@ for line in junctionExonMapFile:
         for internalExonId1 in exonExonMap[externalExonId1][geneId]:
           for internalExonId2 in exonExonMap[externalExonId2][geneId]:
             if not addThirdColumn:
-              print >> outputFile, "\t".join([internalExonId1, externalJunctionId])
-              print >> outputFile, "\t".join([internalExonId2, externalJunctionId])
+              print("\t".join([internalExonId1, externalJunctionId]), file=outputFile)
+              print("\t".join([internalExonId2, externalJunctionId]), file=outputFile)
             else:
-              print >> outputFile, "\t".join([internalExonId1, externalJunctionId, internalExonId1 + "+" + internalExonId2])
-              print >> outputFile, "\t".join([internalExonId2, externalJunctionId, internalExonId1 + "+" + internalExonId2])
+              print("\t".join([internalExonId1, externalJunctionId, internalExonId1 + "+" + internalExonId2]), file=outputFile)
+              print("\t".join([internalExonId2, externalJunctionId, internalExonId1 + "+" + internalExonId2]), file=outputFile)
             
     i = i + 1    
     if i % 200000 == 0:
@@ -223,11 +227,11 @@ for line in junctionExonMapFile:
   else:
     if not externalExonId1 in exonExonMap and not externalExonId1 in excludedExons:
       if printWarnings:
-        print >> sys.stderr, "WARNING: exon " + externalExonId1 + " has been excluded"
+        print("WARNING: exon " + externalExonId1 + " has been excluded", file=sys.stderr)
       excludedExons[externalExonId1] = 1
     if not externalExonId2 in exonExonMap and not externalExonId2 in excludedExons:
       if printWarnings:
-        print >> sys.stderr, "WARNING: exon " + externalExonId2 + " has been excluded"
+        print("WARNING: exon " + externalExonId2 + " has been excluded", file=sys.stderr)
       excludedExons[externalExonId2] = 1
             
 junctionExonMapFile.close()
@@ -235,7 +239,7 @@ outputFile.close ()
 if i > 50000:
   sys.stderr.write("\n")
   
-print "Mapping information for " + str(2*i) + " internal exon id/external junction id pairs written."
+print("Mapping information for " + str(2*i) + " internal exon id/external junction id pairs written.")
 
   
 
