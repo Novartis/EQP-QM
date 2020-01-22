@@ -31,11 +31,11 @@ the directory containing the two scripts `eqp-setup.sh` and
 Dependencies
 ------------
 
-* Python (>= version 2.6.5, imported libraries: copy, gettext, gzip,
+* Python (>= version 3.6.2, imported libraries: copy, gettext, gzip,
   numpy, os, re, sets, sys, textwrap, warnings, argparse)
 * R (>= version 2.10.1)
 * Java (>= version 1.6)
-* samtools (>= version 0.1.19)
+* samtools (>= version 1.3)
 * bedtools (>= version 2.24.0)
 
 
